@@ -40,7 +40,11 @@ export const up = (pgm) => {
         deleted_at: { type: 'timestamptz' },
     });
 
-    pgm.createIndex('addresses', 'employee_id');
+    pgm.createIndex('addresses', 'employee_id', {
+        unique: true, 
+        where: 'deleted_at IS NULL',
+        name: 'unique_active_registration_address'
+    });
 
     pgm.sql(`
         CREATE TRIGGER update_addresses_updated_at
