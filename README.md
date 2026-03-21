@@ -18,6 +18,9 @@
 - **Documentation:** VitePress, Draw.io (ERD)
 - **Deployment:** Docker, Docker Compose, Nginx, Git/Github
 
+## Схема базы данных (ERD)
+![ER-диаграмма базы данных](./docs/db/schema_db.png)
+
 ## Основные комманды git
 ### Базовые команды
 - **git init** — инициализация репозитория.
