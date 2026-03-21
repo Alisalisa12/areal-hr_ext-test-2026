@@ -9,6 +9,7 @@ FROM node:22-alpine
 WORKDIR /api
 COPY --from=builder /api/package*.json ./
 COPY --from=builder /api/dist ./dist 
+COPY --from=builder /api/migrations ./migrations 
 
 RUN npm ci --omit=dev
 
