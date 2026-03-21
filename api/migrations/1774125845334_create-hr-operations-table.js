@@ -1,0 +1,91 @@
+/**
+ * @type {import('node-pg-migrate').ColumnDefinitions | undefined}
+ */
+export const shorthands = undefined;
+
+/**
+ * @param pgm {import('node-pg-migrate').MigrationBuilder}
+ * @param run {() => void | undefined}
+ * @returns {Promise<void> | void}
+ */
+export const up = (pgm) => {
+    pgm.createType('hr_operation_type_enum', [
+        'hire',      
+        'transfer', 
+        'salary_change', 
+        'fire' 
+    ]);
+
+    pgm.createTable('hr_operations', {
+        id: {
+            type: 'uuid',
+            primaryKey: true,
+            default: pgm.func('gen_random_uuid()')
+        },
+        emp_id: {
+            type: 'uuid',
+            notNull: true,
+            references: '"employees"',
+            onDelete: 'CASCADE'
+        },
+        dept_id: {
+            type: 'uuid',
+            references: '"departments"',
+            onDelete: 'SET NULL'
+        },
+        pos_id: {
+            type: 'uuid',
+            references: '"positions"',
+            onDelete: 'SET NULL'
+        },
+
+        created_by: {
+            type: 'uuid',
+            notNull: true,
+            references: '"users"',
+            onDelete: 'RESTRICT'
+        },
+        type: {
+            type: 'hr_operation_type_enum',
+            notNull: true
+        },
+        salary: {
+            type: 'numeric(15, 2)',
+            notNull: true,
+            default: 0
+        },
+        created_at: {
+            type: 'timestamptz',
+            notNull: true,
+            default: pgm.func('current_timestamp'),
+        },
+        updated_at: {
+            type: 'timestamptz',
+            notNull: true,
+            default: pgm.func('current_timestamp'),
+        },
+        deleted_at: { type: 'timestamptz' },
+    });
+
+    pgm.createIndex('hr_operations', 'emp_id');
+    pgm.createIndex('hr_operations', 'dept_id');
+    pgm.createIndex('hr_operations', 'pos_id');
+
+    pgm.sql(`
+        CREATE TRIGGER update_hr_operations_updated_at
+        BEFORE UPDATE ON hr_operations
+        FOR EACH ROW
+        EXECUTE PROCEDURE update_trig();
+    `);
+};
+
+/**
+ * @param pgm {import('node-pg-migrate').MigrationBuilder}
+ * @param run {() => void | undefined}
+ * @returns {Promise<void> | void}
+ */
+export const down = (pgm) => {
+    pgm.sql('DROP TRIGGER IF EXISTS update_hr_operations_updated_at ON hr_operations;');
+    pgm.dropTable('hr_operations');
+    pgm.dropType('hr_operation_type_enum');
+};
