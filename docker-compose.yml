@@ -1,0 +1,11 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: containers/api/Dockerfile 
+    container_name: hr_backend
+    env_file:
+      - .env
+    ports:
+      - "${PORT}:${PORT}"
+    restart: always
