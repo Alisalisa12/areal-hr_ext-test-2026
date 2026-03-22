@@ -11,7 +11,7 @@
 ## Технологический стек
 
 - **Frontend:** Vue.js 3.5, Quasar Framework, Vite 
-- **Backend:** Node.js 22, NestJS 10
+- **Backend:** Node.js 22, NestJS 11
 - **Database:** PostgreSQL 17
 - **Storage:** MinIO
 - **Authentication** Argon2id, Passport Local Strategy 
