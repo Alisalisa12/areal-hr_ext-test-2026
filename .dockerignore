@@ -1,8 +1,19 @@
 api/node_modules
 app/node_modules
+**/node_modules
 
 api/dist
 app/dist
+**/dist
+.quasar
 
 .env
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+
 .git
+.gitignore
+.vscode
+.idea
+*.log

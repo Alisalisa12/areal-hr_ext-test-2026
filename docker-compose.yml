@@ -1,34 +1,75 @@
 services:
+# Nginx
+  nginx:
+    image: nginx:stable-alpine
+    container_name: hr_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./containers/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./containers/nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - app
+      - api
+    restart: always
+    networks:
+      - hr_network
+# Frontend(Vue.js/Quasar)
+  app:
+    build:
+      context: .
+      dockerfile: containers/app/Dockerfile 
+    container_name: hr_frontend
+    expose:
+      - "80"
+    restart: always
+    depends_on:
+      - api
+    networks:
+      - hr_network
+# Backend (Nest.js)
   api:
     build:
       context: .
       dockerfile: containers/api/Dockerfile
     container_name: hr_backend
-    command: sh -c "npm run migrate up && npm run start:prod"
     env_file:
       - .env
-    ports:
-      - "${PORT}:${PORT}"
+    expose:
+      - "3000"
     restart: always
     depends_on:
       db:
         condition: service_healthy
+    networks:
+    - hr_network
 
+# Database (PstgreSQL)
   db:
     image: postgres:17-alpine
     container_name: hr_postgres_db
     restart: always
     env_file:
       - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "5432:5432"
+      start_period: 10s
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - hr_network
 
 volumes:
   pgdata:
+    driver: local
+
+networks:
+  hr_network:
+      driver: bridge
