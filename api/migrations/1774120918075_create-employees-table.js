@@ -10,27 +10,26 @@ export const shorthands = undefined;
  */
 export const up = (pgm) => {
     pgm.createTable('employees', {
-        id: {
-            type: 'uuid',
-            primaryKey: true,
-            default: pgm.func('gen_random_uuid()')
-        },
-        last_name: { type: 'text', notNull: true },
-        first_name: { type: 'text', notNull: true },
-        middle_name: { type: 'text' },
-        birth_date: { type: 'date', notNull: true },
-        is_active: { type: 'boolean', notNull: true, default: true },
-        created_at: {
-            type: 'timestamptz',
-            notNull: true,
-            default: pgm.func('current_timestamp'),
-        },
-        updated_at: {
-            type: 'timestamptz',
-            notNull: true,
-            default: pgm.func('current_timestamp'),
-        },
-        deleted_at: { type: 'timestamptz' },
+      id: {
+        type: 'uuid',
+        primaryKey: true,
+        default: pgm.func('gen_random_uuid()'),
+      },
+      last_name: { type: 'varchar(100)', notNull: true },
+      first_name: { type: 'varchar(100)', notNull: true },
+      middle_name: { type: 'varchar(100)' },
+      birth_date: { type: 'date', notNull: true },
+      created_at: {
+        type: 'timestamptz',
+        notNull: true,
+        default: pgm.func('current_timestamp'),
+      },
+      updated_at: {
+        type: 'timestamptz',
+        notNull: true,
+        default: pgm.func('current_timestamp'),
+      },
+      deleted_at: { type: 'timestamptz' },
     });
 
     pgm.sql(`

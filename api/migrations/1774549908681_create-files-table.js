@@ -9,20 +9,28 @@ export const shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 export const up = (pgm) => {
-  pgm.createTable('organizations', {
+  pgm.createTable('files', {
     id: {
       type: 'uuid',
       primaryKey: true,
       default: pgm.func('gen_random_uuid()'),
     },
-    name: { type: 'text', notNull: true },
-    comment: { type: 'text' },
-    created_at: {
-      type: 'timestamptz',
+    employee_id: {
+      type: 'uuid',
       notNull: true,
-      default: pgm.func('current_timestamp'),
+      references: '"employees"',
+      onDelete: 'RESTRICT',
     },
-    updated_at: {
+    category_id: {
+      type: 'uuid',
+      notNull: true,
+      references: '"file_categories"',
+      onDelete: 'RESTRICT',
+    },
+    name: { type: 'text', notNull: true },
+    storage_path: { type: 'text', notNull: true },
+    mime_type: { type: 'text', notNull: true },
+    created_at: {
       type: 'timestamptz',
       notNull: true,
       default: pgm.func('current_timestamp'),
@@ -30,18 +38,13 @@ export const up = (pgm) => {
     deleted_at: { type: 'timestamptz' },
   });
 
-  pgm.createIndex('organizations', 'name', {
+  pgm.createIndex('files', 'storage_path', {
     unique: true,
-    where: 'deleted_at IS NULL',
-    name: 'unique_active_organization_name',
+    name: 'unique_storage_path',
   });
 
-  pgm.sql(`
-        CREATE TRIGGER update_organizations_updated_at
-        BEFORE UPDATE ON organizations
-        FOR EACH ROW
-        EXECUTE PROCEDURE update_trig();
-    `);
+  pgm.createIndex('files', 'employee_id');
+  pgm.createIndex('files', 'category_id');
 };
 
 /**
@@ -50,11 +53,8 @@ export const up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 export const down = (pgm) => {
-  pgm.sql(
-    'DROP TRIGGER IF EXISTS update_organizations_updated_at ON organizations;',
-  );
-  pgm.dropIndex('organizations', [], {
-    name: 'unique_active_organization_name',
-  });
-  pgm.dropTable('organizations');
+  pgm.dropIndex('files', 'category_id');
+  pgm.dropIndex('files', 'employee_id');
+  pgm.dropIndex('files', [], { name: 'unique_storage_path' });
+  pgm.dropTable('files');
 };

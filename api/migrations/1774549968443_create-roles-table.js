@@ -9,22 +9,11 @@ export const shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 export const up = (pgm) => {
-  pgm.createTable('departments', {
+  pgm.createTable('roles', {
     id: {
       type: 'uuid',
       primaryKey: true,
       default: pgm.func('gen_random_uuid()'),
-    },
-    organization_id: {
-      type: 'uuid',
-      notNull: true,
-      references: '"organizations"',
-      onDelete: 'RESTRICT',
-    },
-    parent_id: {
-      type: 'uuid',
-      references: '"departments"',
-      onDelete: 'SET NULL',
     },
     name: { type: 'text', notNull: true },
     comment: { type: 'text' },
@@ -41,20 +30,17 @@ export const up = (pgm) => {
     deleted_at: { type: 'timestamptz' },
   });
 
-  pgm.createIndex('departments', ['organization_id', 'name'], {
+  pgm.createIndex('roles', 'name', {
     unique: true,
-    where: 'deleted_at IS NULL',
-    name: 'unique_active_department_name',
+    name: 'unique_role_name',
   });
 
-  pgm.createIndex('departments', 'parent_id');
-
   pgm.sql(`
-        CREATE TRIGGER update_departments_updated_at
-        BEFORE UPDATE ON departments
-        FOR EACH ROW
-        EXECUTE PROCEDURE update_trig();
-    `);
+            CREATE TRIGGER update_roles_updated_at
+            BEFORE UPDATE ON roles
+            FOR EACH ROW
+            EXECUTE PROCEDURE update_trig();
+        `);
 };
 
 /**
@@ -63,10 +49,9 @@ export const up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 export const down = (pgm) => {
-  pgm.sql(
-    'DROP TRIGGER IF EXISTS update_departments_updated_at ON departments;',
-  );
-  pgm.dropIndex('departments', 'parent_id');
-  pgm.dropIndex('departments', [], { name: 'unique_active_department_name' });
-  pgm.dropTable('departments');
+  pgm.sql('DROP TRIGGER IF EXISTS update_roles_updated_at ON roles;');
+  pgm.dropIndex('roles', [], {
+    name: 'unique_role_name',
+  });
+  pgm.dropTable('roles');
 };

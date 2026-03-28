@@ -9,25 +9,26 @@ export const shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 export const up = (pgm) => {
-  pgm.createTable('departments', {
+  pgm.createTable('users', {
     id: {
       type: 'uuid',
       primaryKey: true,
       default: pgm.func('gen_random_uuid()'),
     },
-    organization_id: {
+    role_id: {
       type: 'uuid',
       notNull: true,
-      references: '"organizations"',
+      references: '"roles"',
       onDelete: 'RESTRICT',
     },
-    parent_id: {
+    employee_id: {
       type: 'uuid',
-      references: '"departments"',
-      onDelete: 'SET NULL',
+      notNull: true,
+      references: '"employees"',
+      onDelete: 'RESTRICT',
     },
-    name: { type: 'text', notNull: true },
-    comment: { type: 'text' },
+    login: { type: 'text', notNull: true },
+    password_hash: { type: 'text', notNull: true },
     created_at: {
       type: 'timestamptz',
       notNull: true,
@@ -41,17 +42,21 @@ export const up = (pgm) => {
     deleted_at: { type: 'timestamptz' },
   });
 
-  pgm.createIndex('departments', ['organization_id', 'name'], {
+  pgm.createIndex('users', 'employee_id', {
     unique: true,
-    where: 'deleted_at IS NULL',
-    name: 'unique_active_department_name',
+    name: 'unique_employee_user',
   });
 
-  pgm.createIndex('departments', 'parent_id');
+  pgm.createIndex('users', 'login', {
+    unique: true,
+    name: 'unique_user_login',
+  });
+
+  pgm.createIndex('users', 'role_id');
 
   pgm.sql(`
-        CREATE TRIGGER update_departments_updated_at
-        BEFORE UPDATE ON departments
+        CREATE TRIGGER update_users_updated_at
+        BEFORE UPDATE ON users
         FOR EACH ROW
         EXECUTE PROCEDURE update_trig();
     `);
@@ -63,10 +68,9 @@ export const up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 export const down = (pgm) => {
-  pgm.sql(
-    'DROP TRIGGER IF EXISTS update_departments_updated_at ON departments;',
-  );
-  pgm.dropIndex('departments', 'parent_id');
-  pgm.dropIndex('departments', [], { name: 'unique_active_department_name' });
-  pgm.dropTable('departments');
+  pgm.sql('DROP TRIGGER IF EXISTS update_users_updated_at ON users;');
+  pgm.dropIndex('users', 'role_id');
+  pgm.dropIndex('users', [], { name: 'unique_employee_user' });
+  pgm.dropIndex('users', [], { name: 'unique_user_login' });
+  pgm.dropTable('users');
 };

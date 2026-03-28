@@ -9,7 +9,7 @@ export const shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 export const up = (pgm) => {
-    pgm.sql(`
+  pgm.sql(`
         CREATE OR REPLACE FUNCTION update_trig()
         RETURNS trigger 
         LANGUAGE plpgsql AS $$
@@ -27,5 +27,5 @@ export const up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 export const down = (pgm) => {
-    pgm.sql('DROP FUNCTION IF EXISTS update_trig();');
+  pgm.sql('DROP FUNCTION IF EXISTS update_trig();');
 };

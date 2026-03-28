@@ -9,44 +9,44 @@ export const shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 export const up = (pgm) => {
-    pgm.createTable('addresses', {
-        id: {
-            type: 'uuid',
-            primaryKey: true,
-            default: pgm.func('gen_random_uuid()')
-        },
-        employee_id: {
-            type: 'uuid',
-            notNull: true,
-            references: '"employees"',
-            onDelete: 'CASCADE'
-        },
-        region: { type: 'text', notNull: true },
-        city: { type: 'text', notNull: true },
-        street: { type: 'text', notNull: true },
-        house: { type: 'text', notNull: true },
-        block: { type: 'text' }, 
-        flat: { type: 'text' },  
-        created_at: {
-            type: 'timestamptz',
-            notNull: true,
-            default: pgm.func('current_timestamp'),
-        },
-        updated_at: {
-            type: 'timestamptz',
-            notNull: true,
-            default: pgm.func('current_timestamp'),
-        },
-        deleted_at: { type: 'timestamptz' },
-    });
+  pgm.createTable('addresses', {
+    id: {
+      type: 'uuid',
+      primaryKey: true,
+      default: pgm.func('gen_random_uuid()'),
+    },
+    employee_id: {
+      type: 'uuid',
+      notNull: true,
+      references: '"employees"',
+      onDelete: 'RESTRICT',
+    },
+    region: { type: 'text', notNull: true },
+    city: { type: 'text', notNull: true },
+    street: { type: 'text', notNull: true },
+    house: { type: 'text', notNull: true },
+    block: { type: 'text' },
+    flat: { type: 'text' },
+    created_at: {
+      type: 'timestamptz',
+      notNull: true,
+      default: pgm.func('current_timestamp'),
+    },
+    updated_at: {
+      type: 'timestamptz',
+      notNull: true,
+      default: pgm.func('current_timestamp'),
+    },
+    deleted_at: { type: 'timestamptz' },
+  });
 
-    pgm.createIndex('addresses', 'employee_id', {
-        unique: true, 
-        where: 'deleted_at IS NULL',
-        name: 'unique_active_registration_address'
-    });
+  pgm.createIndex('addresses', 'employee_id', {
+    unique: true,
+    where: 'deleted_at IS NULL',
+    name: 'unique_active_registration_address',
+  });
 
-    pgm.sql(`
+  pgm.sql(`
         CREATE TRIGGER update_addresses_updated_at
         BEFORE UPDATE ON addresses
         FOR EACH ROW
@@ -60,6 +60,9 @@ export const up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 export const down = (pgm) => {
-    pgm.sql('DROP TRIGGER IF EXISTS update_addresses_updated_at ON addresses;');
-    pgm.dropTable('addresses');
+  pgm.sql('DROP TRIGGER IF EXISTS update_addresses_updated_at ON addresses;');
+  pgm.dropIndex('addresses', [], {
+    name: 'unique_active_registration_address',
+  });
+  pgm.dropTable('addresses');
 };
