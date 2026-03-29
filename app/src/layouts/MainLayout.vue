@@ -1,20 +1,26 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+  <q-layout view="lhh LpR fFf">
+    <q-header elevated class="bg-white text-primary">
       <q-toolbar>
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
-
-        <q-toolbar-title> Quasar App </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
+        <div id="header-actions" class="row items-center full-width q-px-md"></div>
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
-        <q-item-label header> Essential Links </q-item-label>
+    <q-drawer v-model="drawer" show-if-above :width="260" :breakpoint="500" class="bg-primary">
+      <q-list padding class="menu-list">
+        <q-item-label header class="text-white text-h6 items-center">
+          <q-icon name="people" class="q-mr-md" size="sm" />
+          Учет сотрудников
+        </q-item-label>
+        <q-separator dark class="q-mb-sm bg-secondary q-mx-md" style="height: 1px; opacity: 0.2" />
 
-        <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" />
+        <template v-for="group in navLinks" :key="group.title">
+          <q-item-label header class="text-secondary opacity-70 text-caption text-uppercase">
+            {{ group.title }}
+          </q-item-label>
+
+          <NavLink v-for="link in group.links" :key="link.title" v-bind="link" />
+        </template>
       </q-list>
     </q-drawer>
 
@@ -26,56 +32,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import EssentialLink, { type EssentialLinkProps } from 'components/EssentialLink.vue';
-
-const linksList: EssentialLinkProps[] = [
+import NavLink from 'components/nav/NavLink.vue';
+const drawer = ref(false);
+const navLinks = [
   {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev',
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework',
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev',
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev',
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev',
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev',
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev',
+    title: 'Структура',
+    links: [
+      { title: 'Организации', icon: 'business', link: '/' },
+      { title: 'Отделы', icon: 'work_outline', link: '/dep' },
+    ],
   },
 ];
-
-const leftDrawerOpen = ref(false);
-
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value;
-}
 </script>
