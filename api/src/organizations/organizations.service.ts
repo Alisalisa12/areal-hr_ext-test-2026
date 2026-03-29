@@ -13,4 +13,10 @@ export class OrganizationsService {
     );
     return res.rows;
   }
+  async delete(id: string): Promise<void> {
+    await this.pool.query(
+      'UPDATE organizations SET deleted_at = NOW() WHERE id = $1',
+      [id],
+    );
+  }
 }

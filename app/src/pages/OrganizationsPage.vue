@@ -63,6 +63,7 @@
                 color="negative"
                 icon="delete"
                 size="10px"
+                @click="deleteOrg(props.row.id)"
               >
                 <q-tooltip>Удалить</q-tooltip>
               </q-btn>
@@ -76,10 +77,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { date, type QTableColumn } from 'quasar';
+import { date, type QTableColumn, useQuasar } from 'quasar';
 const filter = ref('');
 const isMounted = ref(false);
 const rows = ref([]);
+const $q = useQuasar();
 
 const columns: QTableColumn[] = [
   { name: 'name', label: 'Название', field: 'name', align: 'left', sortable: true },
@@ -109,14 +111,32 @@ const columns: QTableColumn[] = [
 async function loadData() {
   try {
     const response = await fetch('/api/organizations');
-    if (response.ok) {
-      rows.value = await response.json();
-    } else {
-      console.error('Ошибка сервера:', response.status);
-    }
+    rows.value = await response.json();
   } catch (error) {
-    console.error('Ошибка сети:', error);
+    console.error('Ошибка при получении данных:', error);
+    $q.notify({ type: 'negative', message: 'Ошибка при получении данных' });
   }
+}
+
+function deleteOrg(id: string) {
+  $q.dialog({
+    title: 'Подтверждение',
+    message: 'Вы уверены, что хотите удалить эту организацию?',
+    cancel: true,
+    persistent: true,
+  }).onOk(() => {
+    void (async () => {
+      try {
+        const response = await fetch(`/api/organizations/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Ошибка сервера');
+        await loadData();
+        $q.notify({ type: 'positive', message: 'Организация удалена' });
+      } catch (error) {
+        console.error('Ошибка при удалении организации:', error);
+        $q.notify({ type: 'negative', message: 'Ошибка при удалении организации' });
+      }
+    })();
+  });
 }
 
 onMounted(() => {

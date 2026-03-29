@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Delete, Param } from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
 
 @Controller('/organizations')
@@ -8,5 +8,10 @@ export class OrganizationsController {
   @Get()
   async getAll() {
     return this.organizationsService.getAll();
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    return this.organizationsService.delete(id);
   }
 }
