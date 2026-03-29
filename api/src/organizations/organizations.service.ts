@@ -20,6 +20,17 @@ export class OrganizationsService {
     );
     return res.rows[0];
   }
+  async update(
+    id: string,
+    name: string,
+    comment?: string,
+  ): Promise<Organization> {
+    const res: QueryResult<Organization> = await this.pool.query(
+      'UPDATE organizations SET name = $1, comment = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+      [name, comment || null, id],
+    );
+    return res.rows[0];
+  }
   async delete(id: string): Promise<void> {
     await this.pool.query(
       'UPDATE organizations SET deleted_at = NOW() WHERE id = $1',

@@ -9,7 +9,10 @@
           color="primary"
           icon="add"
           label="Добавить организацию"
-          @click="addDialog = true"
+          @click="
+            resetForm();
+            addDialog = true;
+          "
         />
       </teleport>
 
@@ -59,6 +62,7 @@
                   color="primary"
                   icon="edit"
                   size="10px"
+                  @click="editDialog(props.row)"
                 >
                   <q-tooltip>Изменить</q-tooltip>
                 </q-btn>
@@ -81,10 +85,10 @@
       </div>
     </q-page>
 
-    <q-dialog v-model="addDialog" persistent>
+    <q-dialog v-model="addDialog" persistent @hide="resetForm">
       <q-card style="min-width: 360px">
         <q-card-section>
-          <div class="text-h6">Добавить организацию</div>
+          <div class="text-h6">{{ isEdit ? 'Изменить' : 'Добавить' }} организацию</div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
@@ -98,8 +102,8 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Отмена" color="primary" @click="addDialog = false" />
-          <q-btn flat label="Создать" color="primary" @click="createOrg()" />
+          <q-btn flat label="Отмена" color="primary" @click="resetForm" />
+          <q-btn flat label="Сохранить" color="primary" @click="saveOrg()" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -115,6 +119,8 @@ const rows = ref([]);
 const $q = useQuasar();
 const newOrg = ref({ name: '', comment: '' });
 const addDialog = ref(false);
+const isEdit = ref(false);
+const editId = ref<string | null>(null);
 
 const columns: QTableColumn[] = [
   { name: 'name', label: 'Название', field: 'name', align: 'left', sortable: true },
@@ -151,21 +157,27 @@ async function loadData() {
   }
 }
 
-async function createOrg() {
+async function saveOrg() {
+  const isEditing = isEdit.value;
+  const url = isEditing ? `/api/organizations/${editId.value}` : '/api/organizations';
   try {
-    const response = await fetch('/api/organizations', {
-      method: 'POST',
+    const response = await fetch(url, {
+      method: isEditing ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newOrg.value),
     });
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Ошибка при создании организации');
+      throw new Error(errorData.message || 'Ошибка при сохранении организации');
     }
     addDialog.value = false;
     newOrg.value = { name: '', comment: '' };
+    $q.notify({
+      type: 'positive',
+      message: isEditing ? 'Организация обновлена' : 'Организация создана',
+    });
+    resetForm();
     await loadData();
-    $q.notify({ type: 'positive', message: 'Организация создана' });
   } catch (error) {
     console.error('Ошибка при создании организации:', error);
     $q.notify({ type: 'negative', message: 'Ошибка при создании организации' });
@@ -194,6 +206,23 @@ function deleteOrg(id: string) {
       }
     })();
   });
+}
+
+function editDialog(org: any) {
+  isEdit.value = true;
+  editId.value = org.id;
+  newOrg.value = {
+    name: org.name,
+    comment: org.comment,
+  };
+  addDialog.value = true;
+}
+
+function resetForm() {
+  addDialog.value = false;
+  isEdit.value = false;
+  editId.value = null;
+  newOrg.value = { name: '', comment: '' };
 }
 
 onMounted(() => {

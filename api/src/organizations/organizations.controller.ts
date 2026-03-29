@@ -1,9 +1,17 @@
-import { Controller, Get, Post, Delete, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+} from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
 
 @Controller('/organizations')
 export class OrganizationsController {
-  constructor(private organizationsService: OrganizationsService) { }
+  constructor(private organizationsService: OrganizationsService) {}
 
   @Get()
   async getAll() {
@@ -13,6 +21,15 @@ export class OrganizationsController {
   @Post()
   async create(@Body('name') name: string, @Body('comment') comment?: string) {
     return this.organizationsService.create(name, comment);
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body('name') name: string,
+    @Body('comment') comment?: string,
+  ) {
+    return this.organizationsService.update(id, name, comment);
   }
 
   @Delete(':id')
