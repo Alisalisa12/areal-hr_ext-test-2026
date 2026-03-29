@@ -1,78 +1,109 @@
 <template>
-  <q-page padding>
-    <teleport to="#header-actions" v-if="isMounted">
-      <q-toolbar-title>Организации</q-toolbar-title>
-      <q-space />
-      <q-btn flat color="primary" icon="add" label="Добавить организацию" />
-    </teleport>
+  <div>
+    <q-page padding>
+      <teleport to="#header-actions" v-if="isMounted">
+        <q-toolbar-title>Организации</q-toolbar-title>
+        <q-space />
+        <q-btn
+          flat
+          color="primary"
+          icon="add"
+          label="Добавить организацию"
+          @click="addDialog = true"
+        />
+      </teleport>
 
-    <div class="q-pa-md">
-      <q-table
-        :grid="$q.screen.xs"
-        flat
-        bordered
-        title="Организации"
-        :rows="rows"
-        :columns="columns"
-        row-key="name"
-        :filter="filter"
-      >
-        <template v-slot:top-right>
-          <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
-            <template v-slot:append>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-        </template>
-        <template v-slot:body-cell-deleted_at="props">
-          <q-td :props="props" class="text-center">
-            <q-badge :color="props.value ? 'negative' : 'positive'" class="q-pa-xs">
-              {{ props.value ? 'Удалена' : 'Активна' }}
-            </q-badge>
-          </q-td>
-        </template>
-        <template v-slot:body-cell-actions="props">
-          <q-td :props="props">
-            <div class="q-gutter-sm">
-              <q-btn
-                outline
-                square
-                class="q-pa-xs rounded-borders"
-                color="info"
-                icon="search"
-                size="10px"
-              >
-                <q-tooltip>Просмотр</q-tooltip>
-              </q-btn>
+      <div class="q-pa-md">
+        <q-table
+          :grid="$q.screen.xs"
+          flat
+          bordered
+          title="Организации"
+          :rows="rows"
+          :columns="columns"
+          row-key="name"
+          :filter="filter"
+        >
+          <template v-slot:top-right>
+            <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
+              <template v-slot:append>
+                <q-icon name="search" />
+              </template>
+            </q-input>
+          </template>
+          <template v-slot:body-cell-deleted_at="props">
+            <q-td :props="props" class="text-center">
+              <q-badge :color="props.value ? 'negative' : 'positive'" class="q-pa-xs">
+                {{ props.value ? 'Удалена' : 'Активна' }}
+              </q-badge>
+            </q-td>
+          </template>
+          <template v-slot:body-cell-actions="props">
+            <q-td :props="props">
+              <div class="q-gutter-sm">
+                <q-btn
+                  outline
+                  square
+                  class="q-pa-xs rounded-borders"
+                  color="info"
+                  icon="search"
+                  size="10px"
+                >
+                  <q-tooltip>Просмотр</q-tooltip>
+                </q-btn>
 
-              <q-btn
-                outline
-                square
-                class="q-pa-xs rounded-borders"
-                color="primary"
-                icon="edit"
-                size="10px"
-              >
-                <q-tooltip>Изменить</q-tooltip>
-              </q-btn>
+                <q-btn
+                  outline
+                  square
+                  class="q-pa-xs rounded-borders"
+                  color="primary"
+                  icon="edit"
+                  size="10px"
+                >
+                  <q-tooltip>Изменить</q-tooltip>
+                </q-btn>
 
-              <q-btn
-                outline
-                square
-                class="q-pa-xs rounded-borders"
-                color="negative"
-                icon="delete"
-                size="10px"
-                @click="deleteOrg(props.row.id)"
-              >
-                <q-tooltip>Удалить</q-tooltip>
-              </q-btn>
-            </div>
-          </q-td>
-        </template>
-      </q-table>
-    </div>
-  </q-page>
+                <q-btn
+                  outline
+                  square
+                  class="q-pa-xs rounded-borders"
+                  color="negative"
+                  icon="delete"
+                  size="10px"
+                  @click="deleteOrg(props.row.id)"
+                >
+                  <q-tooltip>Удалить</q-tooltip>
+                </q-btn>
+              </div>
+            </q-td>
+          </template>
+        </q-table>
+      </div>
+    </q-page>
+
+    <q-dialog v-model="addDialog" persistent>
+      <q-card style="min-width: 360px">
+        <q-card-section>
+          <div class="text-h6">Добавить организацию</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <q-input
+            v-model="newOrg.name"
+            label="Название"
+            dense
+            :rules="[(val) => !!val || 'Обязательное поле']"
+          />
+          <q-input v-model="newOrg.comment" label="Описание" type="textarea" />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Отмена" color="primary" @click="addDialog = false" />
+          <q-btn flat label="Создать" color="primary" @click="createOrg()" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -82,6 +113,8 @@ const filter = ref('');
 const isMounted = ref(false);
 const rows = ref([]);
 const $q = useQuasar();
+const newOrg = ref({ name: '', comment: '' });
+const addDialog = ref(false);
 
 const columns: QTableColumn[] = [
   { name: 'name', label: 'Название', field: 'name', align: 'left', sortable: true },
@@ -118,6 +151,27 @@ async function loadData() {
   }
 }
 
+async function createOrg() {
+  try {
+    const response = await fetch('/api/organizations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newOrg.value),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Ошибка при создании организации');
+    }
+    addDialog.value = false;
+    newOrg.value = { name: '', comment: '' };
+    await loadData();
+    $q.notify({ type: 'positive', message: 'Организация создана' });
+  } catch (error) {
+    console.error('Ошибка при создании организации:', error);
+    $q.notify({ type: 'negative', message: 'Ошибка при создании организации' });
+  }
+}
+
 function deleteOrg(id: string) {
   $q.dialog({
     title: 'Подтверждение',
@@ -128,7 +182,10 @@ function deleteOrg(id: string) {
     void (async () => {
       try {
         const response = await fetch(`/api/organizations/${id}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error('Ошибка сервера');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Ошибка при удалении организации)');
+        }
         await loadData();
         $q.notify({ type: 'positive', message: 'Организация удалена' });
       } catch (error) {

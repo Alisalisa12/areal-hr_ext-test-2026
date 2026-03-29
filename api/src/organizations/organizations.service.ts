@@ -5,13 +5,20 @@ import { Organization } from './organization.interface';
 
 @Injectable()
 export class OrganizationsService {
-  constructor(@Inject(PG_CONNECTION) private readonly pool: Pool) {}
+  constructor(@Inject(PG_CONNECTION) private readonly pool: Pool) { }
 
   async getAll(): Promise<Organization[]> {
     const res: QueryResult<Organization> = await this.pool.query(
       'SELECT * FROM organizations ORDER BY name ASC',
     );
     return res.rows;
+  }
+  async create(name: string, comment?: string): Promise<Organization> {
+    const res: QueryResult<Organization> = await this.pool.query(
+      'INSERT INTO organizations (name, comment) VALUES ($1, $2) RETURNING *',
+      [name, comment || null],
+    );
+    return res.rows[0];
   }
   async delete(id: string): Promise<void> {
     await this.pool.query(
