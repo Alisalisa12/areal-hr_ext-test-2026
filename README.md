@@ -10,19 +10,22 @@
 
 ## Технологический стек
 
-- **Frontend:** Vue.js 3.5, Quasar Framework, Vite 
+- **Frontend:** Vue.js 3.5, Quasar Framework, Vite
 - **Backend:** Node.js 22, NestJS 11
 - **Database:** PostgreSQL 17
 - **Storage:** MinIO
-- **Authentication** Argon2id, Passport Local Strategy 
+- **Authentication** Argon2id, Passport Local Strategy
 - **Documentation:** VitePress, Draw.io (ERD)
 - **Deployment:** Docker, Docker Compose, Nginx, Git/Github
 
 ## Схема базы данных (ERD)
+
 ![ER-диаграмма базы данных](./docs/db/schema_db.png)
 
 ## Основные комманды git
+
 ### Базовые команды
+
 - **git init** — инициализация репозитория.
 - **git status** — проверка состояния рабочего каталога и индекса.
 - **git add `<file>`** — добавление изменений в индекс.
@@ -31,6 +34,7 @@
 - **git reset** — отмена изменений в репозитории.
 
 ### Работа с удаленным репозиторием
+
 - **git clone `<url>`** — создание локальной копии удаленного репозитория.
 - **git remote add `<имя_удаленного_репозитория>` `<url>`** — привязка локального репозитория к удаленному.
 - **git push** — отправка коммитов в удаленный репозиторий.
@@ -38,9 +42,18 @@
 - **git pull** — извлечение и слияние изменений.
 
 ### Работа с ветками
+
 - **git branch** — список веток.
 - **git branch `<name>`** — создание новой ветки.
 - **git switch `<name>`** — переключение между ветками.
 - **git checkout `<name>`** — переключение на ветку.
 - **git checkout -b `<name>`** — создание и переключение на ветку.
 - **git merge `<branch>`** — слияние указанной ветки с текущей.
+
+### Установка и запуск
+
+1. Клонировать репозиторий `https://github.com/Alisalisa12/areal-hr_ext-test-2026`
+
+2. Создать файл `.env` на основе примера:
+
+3. Собрать и запустить контейнеры: `docker compose up -d --build`
