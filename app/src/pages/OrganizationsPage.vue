@@ -4,6 +4,7 @@
       <teleport to="#header-actions" v-if="isMounted">
         <q-toolbar-title>Организации</q-toolbar-title>
         <q-space />
+
         <q-btn
           flat
           color="primary"
@@ -48,21 +49,11 @@
                   outline
                   square
                   class="q-pa-xs rounded-borders"
-                  color="info"
-                  icon="search"
-                  size="10px"
-                >
-                  <q-tooltip>Просмотр</q-tooltip>
-                </q-btn>
-
-                <q-btn
-                  outline
-                  square
-                  class="q-pa-xs rounded-borders"
                   color="primary"
                   icon="edit"
                   size="10px"
-                  @click="editDialog(props.row)"
+                  :disable="!!props.row.deleted_at"
+                  @click="editDialog(props.row.id, props.row.name, props.row.comment)"
                 >
                   <q-tooltip>Изменить</q-tooltip>
                 </q-btn>
@@ -115,7 +106,16 @@ import { ref, onMounted } from 'vue';
 import { date, type QTableColumn, useQuasar } from 'quasar';
 const filter = ref('');
 const isMounted = ref(false);
-const rows = ref([]);
+const rows = ref<
+  {
+    id: string;
+    name: string;
+    comment?: string;
+    created_at?: string;
+    updated_at?: string;
+    deleted_at?: string | null;
+  }[]
+>([]);
 const $q = useQuasar();
 const newOrg = ref({ name: '', comment: '' });
 const addDialog = ref(false);
@@ -151,8 +151,7 @@ async function loadData() {
   try {
     const response = await fetch('/api/organizations');
     rows.value = await response.json();
-  } catch (error) {
-    console.error('Ошибка при получении данных:', error);
+  } catch {
     $q.notify({ type: 'negative', message: 'Ошибка при получении данных' });
   }
 }
@@ -167,8 +166,9 @@ async function saveOrg() {
       body: JSON.stringify(newOrg.value),
     });
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Ошибка при сохранении организации');
+      const err = await response.json();
+      $q.notify({ type: 'negative', message: err.message || 'Ошибка при сохранении организации' });
+      return;
     }
     addDialog.value = false;
     newOrg.value = { name: '', comment: '' };
@@ -194,26 +194,22 @@ function deleteOrg(id: string) {
     void (async () => {
       try {
         const response = await fetch(`/api/organizations/${id}`, { method: 'DELETE' });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Ошибка при удалении организации)');
-        }
+        if (!response.ok) throw new Error();
         await loadData();
         $q.notify({ type: 'positive', message: 'Организация удалена' });
-      } catch (error) {
-        console.error('Ошибка при удалении организации:', error);
+      } catch {
         $q.notify({ type: 'negative', message: 'Ошибка при удалении организации' });
       }
     })();
   });
 }
 
-function editDialog(org: any) {
+function editDialog(id: string, name: string, comment?: string) {
   isEdit.value = true;
-  editId.value = org.id;
+  editId.value = id;
   newOrg.value = {
-    name: org.name,
-    comment: org.comment,
+    name,
+    comment: comment ?? '',
   };
   addDialog.value = true;
 }
@@ -227,6 +223,6 @@ function resetForm() {
 
 onMounted(() => {
   isMounted.value = true;
-  loadData().catch(console.error);
+  void loadData();
 });
 </script>

@@ -33,7 +33,7 @@
             <div class="row q-gutter-sm">
               <q-select
                 v-model="selectedOrgId"
-                :options="organizations"
+                :options="organizations.filter((o) => !o.deleted_at)"
                 option-label="name"
                 option-value="id"
                 emit-value
@@ -84,9 +84,11 @@
                 <q-btn
                   outline
                   square
+                  class="q-pa-xs rounded-borders"
                   color="primary"
                   icon="edit"
                   size="10px"
+                  :disable="!!props.row.deleted_at"
                   @click="
                     editDialog(props.row.id, props.row.name, props.row.comment, props.row.parent_id)
                   "
@@ -96,9 +98,11 @@
                 <q-btn
                   outline
                   square
+                  class="q-pa-xs rounded-borders"
                   color="negative"
                   icon="delete"
                   size="10px"
+                  :disable="!!props.row.deleted_at"
                   @click="deleteDept(props.row.id)"
                 >
                   <q-tooltip>Удалить</q-tooltip>
@@ -154,7 +158,7 @@ import { date, type QTableColumn, useQuasar } from 'quasar';
 const filter = ref('');
 const isMounted = ref(false);
 const rows = ref<{ id: string; name: string; comment?: string; parent_id?: string | null }[]>([]);
-const organizations = ref<{ id: string; name: string }[]>([]);
+const organizations = ref<{ id: string; name: string; deleted_at?: string | null }[]>([]);
 const selectedOrgId = ref<string | null>(null);
 const $q = useQuasar();
 
@@ -215,7 +219,11 @@ async function saveDept() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...newDept.value, organization_id: selectedOrgId.value }),
     });
-    if (!response.ok) throw new Error();
+    if (!response.ok) {
+      const err = await response.json();
+      $q.notify({ type: 'negative', message: err.message || 'Ошибка при сохранении отдела' });
+      return;
+    }
     openDialog.value = false;
     $q.notify({ type: 'positive', message: isEditing ? 'Отдел обновлен' : 'Отдел создан' });
     resetForm();

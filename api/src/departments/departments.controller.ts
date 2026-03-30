@@ -8,10 +8,11 @@ import {
   Delete,
 } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
+import { createDepartmentSchema, updateDepartmentSchema } from './departments.shema';
 
 @Controller('/departments')
 export class DepartmentsController {
-  constructor(private departmentsService: DepartmentsService) {}
+  constructor(private departmentsService: DepartmentsService) { }
 
   @Get('org/:orgId')
   async getByOrg(@Param('orgId') orgId: string) {
@@ -25,6 +26,8 @@ export class DepartmentsController {
     @Body('comment') comment?: string,
     @Body('parent_id') parent_id?: string,
   ) {
+    const { error } = createDepartmentSchema.validate({ name, comment });
+    if (error) throw new Error(`Validation error: ${error.message}`);
     return this.departmentsService.create(
       organization_id,
       name,
@@ -40,6 +43,8 @@ export class DepartmentsController {
     @Body('comment') comment?: string,
     @Body('parent_id') parent_id?: string,
   ) {
+    const { error } = updateDepartmentSchema.validate({ name, comment });
+    if (error) throw new Error(`Validation error: ${error.message}`);
     return this.departmentsService.update(id, name, comment, parent_id);
   }
 

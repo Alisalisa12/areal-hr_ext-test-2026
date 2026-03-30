@@ -5,7 +5,7 @@ import { Organization } from './organization.interface';
 
 @Injectable()
 export class OrganizationsService {
-  constructor(@Inject(PG_CONNECTION) private readonly pool: Pool) { }
+  constructor(@Inject(PG_CONNECTION) private readonly pool: Pool) {}
 
   async getAll(): Promise<Organization[]> {
     const res: QueryResult<Organization> = await this.pool.query(
@@ -16,7 +16,7 @@ export class OrganizationsService {
   async create(name: string, comment?: string): Promise<Organization> {
     const res: QueryResult<Organization> = await this.pool.query(
       'INSERT INTO organizations (name, comment) VALUES ($1, $2) RETURNING *',
-      [name, comment || null],
+      [name, comment ?? null],
     );
     return res.rows[0];
   }
@@ -26,8 +26,8 @@ export class OrganizationsService {
     comment?: string,
   ): Promise<Organization> {
     const res: QueryResult<Organization> = await this.pool.query(
-      'UPDATE organizations SET name = $1, comment = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
-      [name, comment || null, id],
+      'UPDATE organizations SET name = $1, comment = $2, updated_at = NOW() WHERE id = $3 AND deleted_at IS NULL RETURNING *',
+      [name, comment ?? null, id],
     );
     return res.rows[0];
   }

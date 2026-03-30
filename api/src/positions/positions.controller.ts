@@ -7,6 +7,7 @@ import {
   Param,
   Body,
 } from '@nestjs/common';
+import { createPositionSchema, updatePositionSchema } from './positions.schema';
 import { PositionsService } from './positions.service';
 
 @Controller('/positions')
@@ -20,6 +21,8 @@ export class PositionsController {
 
   @Post()
   async create(@Body('name') name: string, @Body('comment') comment?: string) {
+    const { error } = createPositionSchema.validate({ name, comment });
+    if (error) throw new Error(`Validation error: ${error.message}`);
     return this.positionsService.create(name, comment);
   }
 
@@ -29,6 +32,8 @@ export class PositionsController {
     @Body('name') name: string,
     @Body('comment') comment?: string,
   ) {
+    const { error } = updatePositionSchema.validate({ name, comment });
+    if (error) throw new Error(`Validation error: ${error.message}`);
     return this.positionsService.update(id, name, comment);
   }
 

@@ -166,7 +166,11 @@ async function savePos() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newPos.value),
     });
-    if (!response.ok) throw new Error();
+    if (!response.ok) {
+      const err = await response.json();
+      $q.notify({ type: 'negative', message: err.message || 'Ошибка при сохранении' });
+      return;
+    }
     addDialog.value = false;
     newPos.value = { name: '', comment: '' };
     $q.notify({
