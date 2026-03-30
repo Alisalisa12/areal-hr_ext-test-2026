@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import NavLink from 'components/nav/NavLink.vue';
+import NavLink from '../components/nav/NavLink.vue';
 const drawer = ref(false);
 const navLinks = [
   {
@@ -40,6 +40,7 @@ const navLinks = [
     links: [
       { title: 'Организации', icon: 'business', link: '/' },
       { title: 'Отделы', icon: 'work_outline', link: '/dep' },
+      { title: 'Должности', icon: 'badge', link: '/pos' },
     ],
   },
 ];

@@ -10,7 +10,7 @@ export class DepartmentsService {
   async getByOrg(orgId: string): Promise<Department[]> {
     const res: QueryResult<Department> = await this.pool.query(
       `SELECT * FROM departments 
-       WHERE organization_id = $1 
+       WHERE organization_id = $1
        ORDER BY name ASC`,
       [orgId],
     );
