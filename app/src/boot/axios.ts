@@ -1,5 +1,6 @@
 import { defineBoot } from '#q-app/wrappers';
-import axios, { type AxiosInstance } from 'axios';
+import axios, { type AxiosInstance, type AxiosError } from 'axios';
+import { Notify } from 'quasar';
 
 declare module 'vue' {
   interface ComponentCustomProperties {
@@ -14,7 +15,40 @@ declare module 'vue' {
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = axios.create({ baseURL: 'https://api.example.com' });
+const api = axios.create({ baseURL: '/api' });
+api.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError<{ message?: string }>) => {
+    let message: string;
+
+    if (error.response) {
+      const status = error.response.status;
+      if (status === 401) {
+        message = 'Сессия истекла. Пожалуйста, войдите снова.';
+      } else if (status === 403) {
+        message = 'У вас нет прав для этого действия (403).';
+      } else if (status === 404) {
+        message = 'Запрашиваемый ресурс не найден (404).';
+      } else {
+        message = error.response.data?.message || `Ошибка сервера: ${status}`;
+      }
+      Notify.create({
+        type: 'negative',
+        message: message,
+        position: 'top-right',
+        timeout: 3000,
+      });
+    } else {
+      Notify.create({
+        type: 'negative',
+        message: 'Ошибка сети: сервер недоступен',
+        position: 'top-right',
+      });
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export default defineBoot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
