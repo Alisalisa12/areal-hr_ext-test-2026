@@ -6,13 +6,17 @@ import {
   Delete,
   Param,
   Body,
+  UsePipes,
 } from '@nestjs/common';
 import { createPositionSchema, updatePositionSchema } from './positions.schema';
 import { PositionsService } from './positions.service';
+import { CreatePositionDto } from './dto/create-position.dto';
+import { UpdatePositionDto } from './dto/update-position.dto';
+import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
 
 @Controller('/positions')
 export class PositionsController {
-  constructor(private positionsService: PositionsService) {}
+  constructor(private readonly positionsService: PositionsService) {}
 
   @Get()
   async getAll() {
@@ -20,21 +24,18 @@ export class PositionsController {
   }
 
   @Post()
-  async create(@Body('name') name: string, @Body('comment') comment?: string) {
-    const { error } = createPositionSchema.validate({ name, comment });
-    if (error) throw new Error(`Validation error: ${error.message}`);
-    return this.positionsService.create(name, comment);
+  @UsePipes(new JoiValidationPipe(createPositionSchema))
+  async create(@Body() createDto: CreatePositionDto) {
+    return this.positionsService.create(createDto);
   }
 
   @Patch(':id')
   async update(
     @Param('id') id: string,
-    @Body('name') name: string,
-    @Body('comment') comment?: string,
+    @Body(new JoiValidationPipe(updatePositionSchema))
+    updateDto: UpdatePositionDto,
   ) {
-    const { error } = updatePositionSchema.validate({ name, comment });
-    if (error) throw new Error(`Validation error: ${error.message}`);
-    return this.positionsService.update(id, name, comment);
+    return this.positionsService.update(id, updateDto);
   }
 
   @Delete(':id')
