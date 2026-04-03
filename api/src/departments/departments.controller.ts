@@ -2,50 +2,43 @@ import {
   Controller,
   Get,
   Post,
-  Body,
   Patch,
-  Param,
   Delete,
+  Param,
+  Body,
+  UsePipes,
 } from '@nestjs/common';
+import {
+  createDepartmentSchema,
+  updateDepartmentSchema,
+} from './departments.shema';
 import { DepartmentsService } from './departments.service';
-import { createDepartmentSchema, updateDepartmentSchema } from './departments.shema';
+import { CreateDepartmentDto } from './dto/create-department.dto';
+import { UpdateDepartmentDto } from './dto/update-department.dto';
+import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
 
 @Controller('/departments')
 export class DepartmentsController {
-  constructor(private departmentsService: DepartmentsService) { }
+  constructor(private readonly departmentsService: DepartmentsService) {}
 
-  @Get('org/:orgId')
+  @Get('organization/:orgId')
   async getByOrg(@Param('orgId') orgId: string) {
     return this.departmentsService.getByOrg(orgId);
   }
 
   @Post()
-  async create(
-    @Body('organization_id') organization_id: string,
-    @Body('name') name: string,
-    @Body('comment') comment?: string,
-    @Body('parent_id') parent_id?: string,
-  ) {
-    const { error } = createDepartmentSchema.validate({ name, comment });
-    if (error) throw new Error(`Validation error: ${error.message}`);
-    return this.departmentsService.create(
-      organization_id,
-      name,
-      comment,
-      parent_id,
-    );
+  @UsePipes(new JoiValidationPipe(createDepartmentSchema))
+  async create(@Body() createDto: CreateDepartmentDto) {
+    return this.departmentsService.create(createDto);
   }
 
   @Patch(':id')
   async update(
     @Param('id') id: string,
-    @Body('name') name: string,
-    @Body('comment') comment?: string,
-    @Body('parent_id') parent_id?: string,
+    @Body(new JoiValidationPipe(updateDepartmentSchema))
+    updateDto: UpdateDepartmentDto,
   ) {
-    const { error } = updateDepartmentSchema.validate({ name, comment });
-    if (error) throw new Error(`Validation error: ${error.message}`);
-    return this.departmentsService.update(id, name, comment, parent_id);
+    return this.departmentsService.update(id, updateDto);
   }
 
   @Delete(':id')
