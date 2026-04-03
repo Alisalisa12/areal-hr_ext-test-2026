@@ -43,6 +43,7 @@
                   color="primary"
                   icon="visibility"
                   size="10px"
+                  @click="openViewDialog(props.row)"
                 >
                   <q-tooltip>Просмотр</q-tooltip>
                 </q-btn>
@@ -75,6 +76,8 @@
         </q-table>
       </div>
     </q-page>
+
+    <EmployeeViewDialog v-model="viewDialog" :employee="selectedEmployee" @fire="handleFire" />
 
     <q-dialog v-model="addDialog" persistent @hide="resetForm">
       <q-card style="min-width: 400px">
@@ -123,12 +126,17 @@ import { ref, onMounted, computed } from 'vue';
 import { date, type QTableColumn, useQuasar } from 'quasar';
 import { useEmployeesStore } from '../stores/employees';
 import type { Employee, CreateEmployeeDto } from '../models/Employee';
+import EmployeeViewDialog from '../components/EmployeeViewDialog.vue';
 
 const $q = useQuasar();
 const employeesStore = useEmployeesStore();
+
 const isMounted = ref(false);
 const filter = ref('');
 const addDialog = ref(false);
+const viewDialog = ref(false);
+const selectedEmployee = ref<Employee | null>(null);
+
 const isEdit = ref(false);
 const editId = ref<string | null>(null);
 
@@ -140,7 +148,6 @@ const emptyEmployee: CreateEmployeeDto = {
 };
 
 const newEmployee = ref<CreateEmployeeDto>({ ...emptyEmployee });
-
 const rows = computed(() => employeesStore.items);
 
 const columns: QTableColumn[] = [
@@ -199,9 +206,20 @@ function editEmployee(row: Employee) {
 
 function resetForm() {
   addDialog.value = false;
+  viewDialog.value = false;
   isEdit.value = false;
   editId.value = null;
+  selectedEmployee.value = null;
   newEmployee.value = { ...emptyEmployee };
+}
+
+function openViewDialog(row: Employee) {
+  selectedEmployee.value = row;
+  viewDialog.value = true;
+}
+
+function handleFire(employee: Employee | null) {
+  console.log('Увольнение сотрудника:', employee?.last_name);
 }
 
 onMounted(() => {
