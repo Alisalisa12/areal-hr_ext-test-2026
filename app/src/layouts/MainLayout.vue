@@ -2,7 +2,7 @@
   <q-layout view="lhh LpR fFf">
     <q-header elevated class="bg-white text-primary">
       <q-toolbar>
-        <div id="header-actions" class="row items-center full-width q-px-md"></div>
+        <div id="header-actions" class="row items-center q-gutter-x-md" style="flex: 1"></div>
       </q-toolbar>
     </q-header>
 

@@ -25,8 +25,9 @@
           title="Должности"
           :rows="rows"
           :columns="columns"
-          row-key="name"
+          row-key="id"
           :filter="filter"
+          no-data-label="Данные не найдены или еще не загружены"
         >
           <template v-slot:top-right>
             <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
@@ -35,6 +36,7 @@
               </template>
             </q-input>
           </template>
+
           <template v-slot:body-cell-deleted_at="props">
             <q-td :props="props" class="text-center">
               <q-badge :color="props.value ? 'negative' : 'positive'" class="q-pa-xs">
@@ -42,8 +44,9 @@
               </q-badge>
             </q-td>
           </template>
+
           <template v-slot:body-cell-actions="props">
-            <q-td :props="props">
+            <q-td :props="props" class="text-center">
               <div class="q-gutter-sm">
                 <q-btn
                   outline
@@ -53,7 +56,7 @@
                   icon="edit"
                   size="10px"
                   :disable="!!props.row.deleted_at"
-                  @click="editDialog(props.row.id, props.row.name, props.row.comment)"
+                  @click="editPosition(props.row)"
                 >
                   <q-tooltip>Изменить</q-tooltip>
                 </q-btn>
@@ -80,7 +83,7 @@
     <q-dialog v-model="addDialog" persistent @hide="resetForm">
       <q-card style="min-width: 360px">
         <q-card-section>
-          <div class="text-h6">{{ isEdit ? 'Изменить' : 'Добавить' }} организацию</div>
+          <div class="text-h6">{{ isEdit ? 'Изменить' : 'Добавить' }} должность</div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
@@ -95,7 +98,7 @@
 
         <q-card-actions align="right">
           <q-btn flat label="Отмена" color="primary" @click="resetForm" />
-          <q-btn flat label="Сохранить" color="primary" @click="savePos()" />
+          <q-btn flat label="Сохранить" color="primary" @click="savePos" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -103,25 +106,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { date, type QTableColumn, useQuasar } from 'quasar';
-const filter = ref('');
-const isMounted = ref(false);
-const rows = ref<
-  {
-    id: string;
-    name: string;
-    comment?: string;
-    created_at?: string;
-    updated_at?: string;
-    deleted_at?: string | null;
-  }[]
->([]);
+import { usePositionsStore } from '../stores/positions';
+import type { Position, CreatePositionDto } from '../models/Position';
 const $q = useQuasar();
-const newPos = ref({ name: '', comment: '' });
+const positionsStore = usePositionsStore();
+const isMounted = ref(false);
+const filter = ref('');
 const addDialog = ref(false);
 const isEdit = ref(false);
 const editId = ref<string | null>(null);
+const newPos = ref<CreatePositionDto>({ name: '', comment: '' });
+
+const rows = computed(() => positionsStore.items);
 
 const columns: QTableColumn[] = [
   { name: 'name', label: 'Название', field: 'name', align: 'left', sortable: true },
@@ -131,58 +129,30 @@ const columns: QTableColumn[] = [
     label: 'Создано',
     field: 'created_at',
     align: 'center',
-    format: (val) => (val ? date.formatDate(val, 'DD.MM.YYYY HH:mm') : '-'),
+    format: (val) => (val ? date.formatDate(val as string, 'DD.MM.YYYY HH:mm') : '-'),
   },
   {
     name: 'updated_at',
     label: 'Обновлено',
     field: 'updated_at',
     align: 'center',
-    format: (val) => (val ? date.formatDate(val, 'DD.MM.YYYY HH:mm') : '-'),
+    format: (val) => (val ? date.formatDate(val as string, 'DD.MM.YYYY HH:mm') : '-'),
   },
   { name: 'deleted_at', label: 'Статус', field: 'deleted_at', align: 'center' },
-  {
-    name: 'actions',
-    label: 'Действия',
-    field: 'actions',
-  },
+  { name: 'actions', label: 'Действия', field: 'actions', align: 'center' },
 ];
 
-async function loadData() {
-  try {
-    const response = await fetch('/api/positions');
-    rows.value = await response.json();
-  } catch {
-    $q.notify({ type: 'negative', message: 'Ошибка при получении данных' });
+async function savePos() {
+  if (isEdit.value && editId.value) {
+    await positionsStore.editPosition(editId.value, newPos.value);
+  } else {
+    await positionsStore.addPosition(newPos.value);
   }
+  resetForm();
 }
 
-async function savePos() {
-  const isEditing = isEdit.value;
-  const url = isEditing ? `/api/positions/${editId.value}` : '/api/positions';
-  try {
-    const response = await fetch(url, {
-      method: isEditing ? 'PATCH' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newPos.value),
-    });
-    if (!response.ok) {
-      const err = await response.json();
-      $q.notify({ type: 'negative', message: err.message || 'Ошибка при сохранении' });
-      return;
-    }
-    addDialog.value = false;
-    newPos.value = { name: '', comment: '' };
-    $q.notify({
-      type: 'positive',
-      message: isEditing ? 'Должность обновлена' : 'Должность создана',
-    });
-    resetForm();
-    await loadData();
-  } catch (error) {
-    console.error('Ошибка при создании должности:', error);
-    $q.notify({ type: 'negative', message: 'Ошибка при создании должности' });
-  }
+async function confirmDelete(id: string) {
+  await positionsStore.removePosition(id);
 }
 
 function deletePos(id: string) {
@@ -192,25 +162,15 @@ function deletePos(id: string) {
     cancel: true,
     persistent: true,
   }).onOk(() => {
-    void (async () => {
-      try {
-        const response = await fetch(`/api/positions/${id}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error();
-        await loadData();
-        $q.notify({ type: 'positive', message: 'Должность удалена' });
-      } catch {
-        $q.notify({ type: 'negative', message: 'Ошибка при удалении должности' });
-      }
-    })();
+    void confirmDelete(id);
   });
 }
-
-function editDialog(id: string, name: string, comment?: string) {
+function editPosition(row: Position) {
   isEdit.value = true;
-  editId.value = id;
+  editId.value = row.id;
   newPos.value = {
-    name,
-    comment: comment ?? '',
+    name: row.name,
+    comment: row.comment ?? '',
   };
   addDialog.value = true;
 }
@@ -224,6 +184,6 @@ function resetForm() {
 
 onMounted(() => {
   isMounted.value = true;
-  void loadData();
+  void positionsStore.fetchPositions();
 });
 </script>

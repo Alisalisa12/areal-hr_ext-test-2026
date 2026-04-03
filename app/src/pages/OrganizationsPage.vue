@@ -25,8 +25,9 @@
           title="Организации"
           :rows="rows"
           :columns="columns"
-          row-key="name"
+          row-key="id"
           :filter="filter"
+          no-data-label="Данные не найдены или еще не загружены"
         >
           <template v-slot:top-right>
             <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
@@ -35,6 +36,7 @@
               </template>
             </q-input>
           </template>
+
           <template v-slot:body-cell-deleted_at="props">
             <q-td :props="props" class="text-center">
               <q-badge :color="props.value ? 'negative' : 'positive'" class="q-pa-xs">
@@ -42,8 +44,9 @@
               </q-badge>
             </q-td>
           </template>
+
           <template v-slot:body-cell-actions="props">
-            <q-td :props="props">
+            <q-td :props="props" class="text-center">
               <div class="q-gutter-sm">
                 <q-btn
                   outline
@@ -53,7 +56,7 @@
                   icon="edit"
                   size="10px"
                   :disable="!!props.row.deleted_at"
-                  @click="editDialog(props.row.id, props.row.name, props.row.comment)"
+                  @click="editOrg(props.row)"
                 >
                   <q-tooltip>Изменить</q-tooltip>
                 </q-btn>
@@ -65,6 +68,7 @@
                   color="negative"
                   icon="delete"
                   size="10px"
+                  :disable="!!props.row.deleted_at"
                   @click="deleteOrg(props.row.id)"
                 >
                   <q-tooltip>Удалить</q-tooltip>
@@ -94,7 +98,7 @@
 
         <q-card-actions align="right">
           <q-btn flat label="Отмена" color="primary" @click="resetForm" />
-          <q-btn flat label="Сохранить" color="primary" @click="saveOrg()" />
+          <q-btn flat label="Сохранить" color="primary" @click="saveOrg" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -102,25 +106,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { date, type QTableColumn, useQuasar } from 'quasar';
-const filter = ref('');
-const isMounted = ref(false);
-const rows = ref<
-  {
-    id: string;
-    name: string;
-    comment?: string;
-    created_at?: string;
-    updated_at?: string;
-    deleted_at?: string | null;
-  }[]
->([]);
+import { useOrganizationsStore } from '../stores/organizations';
+import type { Organization, CreateOrganizationDto } from '../models/Organization';
+
 const $q = useQuasar();
-const newOrg = ref({ name: '', comment: '' });
+const organizationsStore = useOrganizationsStore();
+const isMounted = ref(false);
+const filter = ref('');
 const addDialog = ref(false);
 const isEdit = ref(false);
 const editId = ref<string | null>(null);
+const newOrg = ref<CreateOrganizationDto>({ name: '', comment: '' });
+
+const rows = computed(() => organizationsStore.items);
 
 const columns: QTableColumn[] = [
   { name: 'name', label: 'Название', field: 'name', align: 'left', sortable: true },
@@ -130,58 +130,30 @@ const columns: QTableColumn[] = [
     label: 'Создано',
     field: 'created_at',
     align: 'center',
-    format: (val) => (val ? date.formatDate(val, 'DD.MM.YYYY HH:mm') : '-'),
+    format: (val) => (val ? date.formatDate(val as string, 'DD.MM.YYYY HH:mm') : '-'),
   },
   {
     name: 'updated_at',
     label: 'Обновлено',
     field: 'updated_at',
     align: 'center',
-    format: (val) => (val ? date.formatDate(val, 'DD.MM.YYYY HH:mm') : '-'),
+    format: (val) => (val ? date.formatDate(val as string, 'DD.MM.YYYY HH:mm') : '-'),
   },
   { name: 'deleted_at', label: 'Статус', field: 'deleted_at', align: 'center' },
-  {
-    name: 'actions',
-    label: 'Действия',
-    field: 'actions',
-  },
+  { name: 'actions', label: 'Действия', field: 'actions', align: 'center' },
 ];
 
-async function loadData() {
-  try {
-    const response = await fetch('/api/organizations');
-    rows.value = await response.json();
-  } catch {
-    $q.notify({ type: 'negative', message: 'Ошибка при получении данных' });
+async function saveOrg() {
+  if (isEdit.value && editId.value) {
+    await organizationsStore.editOrganization(editId.value, newOrg.value);
+  } else {
+    await organizationsStore.addOrganization(newOrg.value);
   }
+  resetForm();
 }
 
-async function saveOrg() {
-  const isEditing = isEdit.value;
-  const url = isEditing ? `/api/organizations/${editId.value}` : '/api/organizations';
-  try {
-    const response = await fetch(url, {
-      method: isEditing ? 'PATCH' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newOrg.value),
-    });
-    if (!response.ok) {
-      const err = await response.json();
-      $q.notify({ type: 'negative', message: err.message || 'Ошибка при сохранении организации' });
-      return;
-    }
-    addDialog.value = false;
-    newOrg.value = { name: '', comment: '' };
-    $q.notify({
-      type: 'positive',
-      message: isEditing ? 'Организация обновлена' : 'Организация создана',
-    });
-    resetForm();
-    await loadData();
-  } catch (error) {
-    console.error('Ошибка при создании организации:', error);
-    $q.notify({ type: 'negative', message: 'Ошибка при создании организации' });
-  }
+async function confirmDelete(id: string) {
+  await organizationsStore.removeOrganization(id);
 }
 
 function deleteOrg(id: string) {
@@ -191,25 +163,16 @@ function deleteOrg(id: string) {
     cancel: true,
     persistent: true,
   }).onOk(() => {
-    void (async () => {
-      try {
-        const response = await fetch(`/api/organizations/${id}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error();
-        await loadData();
-        $q.notify({ type: 'positive', message: 'Организация удалена' });
-      } catch {
-        $q.notify({ type: 'negative', message: 'Ошибка при удалении организации' });
-      }
-    })();
+    void confirmDelete(id);
   });
 }
 
-function editDialog(id: string, name: string, comment?: string) {
+function editOrg(row: Organization) {
   isEdit.value = true;
-  editId.value = id;
+  editId.value = row.id;
   newOrg.value = {
-    name,
-    comment: comment ?? '',
+    name: row.name,
+    comment: row.comment ?? '',
   };
   addDialog.value = true;
 }
@@ -223,6 +186,6 @@ function resetForm() {
 
 onMounted(() => {
   isMounted.value = true;
-  void loadData();
+  void organizationsStore.fetchOrganizations();
 });
 </script>
