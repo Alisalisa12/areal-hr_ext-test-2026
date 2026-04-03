@@ -1,8 +1,15 @@
-import Joi from 'joi';
+import * as Joi from 'joi';
 
 export const createOrganizationSchema = Joi.object({
-  name: Joi.string().min(2).max(100).required(),
-  comment: Joi.string().max(500).allow(null, ''),
+  name: Joi.string().min(3).max(100).required().messages({
+    'string.empty': 'Название не может быть пустым',
+    'string.min': 'Название слишком короткое (минимум 3 символа)',
+    'any.required': 'Поле "название" обязательно',
+  }),
+  comment: Joi.string().max(500).allow('', null).optional(),
 });
 
-export const updateOrganizationSchema = createOrganizationSchema;
+export const updateOrganizationSchema = createOrganizationSchema.fork(
+  ['name', 'comment'],
+  (schema) => schema.optional(),
+);
