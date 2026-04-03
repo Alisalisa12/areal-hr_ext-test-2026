@@ -13,7 +13,7 @@
           :disable="!selectedOrgId"
           @click="
             resetForm();
-            openDialog = true;
+            addDialog = true;
           "
         />
       </teleport>
@@ -28,12 +28,14 @@
           :columns="columns"
           row-key="id"
           :filter="filter"
+          :loading="departmentsStore.isLoading"
+          no-data-label="Данные не найдены или еще не загружены"
         >
           <template v-slot:top-right>
             <div class="row q-gutter-sm">
               <q-select
                 v-model="selectedOrgId"
-                :options="organizations.filter((o) => !o.deleted_at)"
+                :options="organizationsStore.items.filter((o) => !o.deleted_at)"
                 option-label="name"
                 option-value="id"
                 emit-value
@@ -42,7 +44,7 @@
                 dense
                 outlined
                 style="min-width: 200px"
-                @update:model-value="void loadData()"
+                @update:model-value="loadDepartments"
               />
               <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
                 <template v-slot:append>
@@ -51,6 +53,7 @@
               </q-input>
             </div>
           </template>
+
           <template v-slot:body-cell-name="props">
             <q-td :props="props">
               <div
@@ -79,7 +82,7 @@
           </template>
 
           <template v-slot:body-cell-actions="props">
-            <q-td :props="props">
+            <q-td :props="props" class="text-center">
               <div class="q-gutter-sm">
                 <q-btn
                   outline
@@ -89,12 +92,11 @@
                   icon="edit"
                   size="10px"
                   :disable="!!props.row.deleted_at"
-                  @click="
-                    editDialog(props.row.id, props.row.name, props.row.comment, props.row.parent_id)
-                  "
+                  @click="editDept(props.row)"
                 >
                   <q-tooltip>Изменить</q-tooltip>
                 </q-btn>
+
                 <q-btn
                   outline
                   square
@@ -114,7 +116,7 @@
       </div>
     </q-page>
 
-    <q-dialog v-model="openDialog" persistent @hide="resetForm">
+    <q-dialog v-model="addDialog" persistent @hide="resetForm">
       <q-card style="min-width: 360px">
         <q-card-section>
           <div class="text-h6">{{ isEdit ? 'Изменить' : 'Добавить' }} отдел</div>
@@ -129,7 +131,7 @@
           />
           <q-select
             v-model="newDept.parent_id"
-            :options="rows.filter((r) => r.id !== editId)"
+            :options="departmentsStore.items.filter((r) => r.id !== editId)"
             option-label="name"
             option-value="id"
             emit-value
@@ -144,7 +146,7 @@
 
         <q-card-actions align="right">
           <q-btn flat label="Отмена" color="primary" @click="resetForm" />
-          <q-btn flat label="Сохранить" color="primary" @click="void saveDept()" />
+          <q-btn flat label="Сохранить" color="primary" @click="saveDept" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -152,23 +154,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { date, type QTableColumn, useQuasar } from 'quasar';
+import { useOrganizationsStore } from '../stores/organizations';
+import { useDepartmentsStore } from '../stores/departments';
+import type { Department, CreateDepartmentDto } from '../models/Department';
 
-const filter = ref('');
-const isMounted = ref(false);
-const rows = ref<{ id: string; name: string; comment?: string; parent_id?: string | null }[]>([]);
-const organizations = ref<{ id: string; name: string; deleted_at?: string | null }[]>([]);
-const selectedOrgId = ref<string | null>(null);
 const $q = useQuasar();
+const organizationsStore = useOrganizationsStore();
+const departmentsStore = useDepartmentsStore();
 
-const newDept = ref({ name: '', comment: '', parent_id: null as string | null });
-const openDialog = ref(false);
+const isMounted = ref(false);
+const filter = ref('');
+const addDialog = ref(false);
 const isEdit = ref(false);
 const editId = ref<string | null>(null);
+const selectedOrgId = ref<string | null>(null);
+
+const newDept = ref<CreateDepartmentDto>({
+  name: '',
+  comment: '',
+  parent_id: null,
+  organization_id: '',
+});
+
+const rows = computed(() => departmentsStore.items);
 
 const columns: QTableColumn[] = [
-  { name: 'name', label: 'Название', field: 'name', align: 'left' },
+  { name: 'name', label: 'Название', field: 'name', align: 'left', sortable: true },
   { name: 'comment', label: 'Описание', field: 'comment', align: 'left' },
   {
     name: 'created_at',
@@ -185,104 +198,63 @@ const columns: QTableColumn[] = [
     format: (val) => (val ? date.formatDate(val as string, 'DD.MM.YYYY HH:mm') : '-'),
   },
   { name: 'deleted_at', label: 'Статус', field: 'deleted_at', align: 'center' },
-  { name: 'actions', label: 'Действия', field: 'id', align: 'right' },
+  { name: 'actions', label: 'Действия', field: 'actions', align: 'center' },
 ];
 
-async function loadOrgs() {
-  try {
-    const response = await fetch('/api/organizations');
-    organizations.value = await response.json();
-  } catch {
-    $q.notify({ type: 'negative', message: 'Ошибка при загрузке организаций' });
-  }
-}
-
-async function loadData() {
-  if (!selectedOrgId.value) return;
-  try {
-    const response = await fetch(`/api/departments/org/${selectedOrgId.value}`);
-    const data = await response.json();
-    rows.value = sortByHierarchy(data);
-  } catch {
-    rows.value = [];
-    $q.notify({ type: 'negative', message: 'Ошибка при получении данных' });
+async function loadDepartments() {
+  if (selectedOrgId.value) {
+    await departmentsStore.fetchByOrganization(selectedOrgId.value);
   }
 }
 
 async function saveDept() {
-  const isEditing = isEdit.value;
-  const url = isEditing ? `/api/departments/${editId.value || ''}` : '/api/departments';
+  if (!selectedOrgId.value) return;
 
-  try {
-    const response = await fetch(url, {
-      method: isEditing ? 'PATCH' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...newDept.value, organization_id: selectedOrgId.value }),
-    });
-    if (!response.ok) {
-      const err = await response.json();
-      $q.notify({ type: 'negative', message: err.message || 'Ошибка при сохранении отдела' });
-      return;
-    }
-    openDialog.value = false;
-    $q.notify({ type: 'positive', message: isEditing ? 'Отдел обновлен' : 'Отдел создан' });
-    resetForm();
-    await loadData();
-  } catch {
-    $q.notify({ type: 'negative', message: 'Ошибка при сохранении отдела' });
+  const payload = { ...newDept.value, organization_id: selectedOrgId.value };
+
+  if (isEdit.value && editId.value) {
+    await departmentsStore.editDepartment(editId.value, payload);
+  } else {
+    await departmentsStore.addDepartment(payload);
   }
+  resetForm();
+}
+async function confirmDelete(id: string) {
+  await departmentsStore.removeDepartment(id);
 }
 
 function deleteDept(id: string) {
   $q.dialog({
     title: 'Подтверждение',
-    message: 'Вы уверены, что хотите удалить этот отдел?',
+    message: 'Вы уверены, что хотите удалить эту организацию?',
     cancel: true,
     persistent: true,
   }).onOk(() => {
-    void (async () => {
-      try {
-        const response = await fetch(`/api/departments/${id}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error();
-        await loadData();
-        $q.notify({ type: 'positive', message: 'Отдел удален' });
-      } catch {
-        $q.notify({ type: 'negative', message: 'Ошибка при удалении отдела' });
-      }
-    })();
+    void confirmDelete(id);
   });
 }
 
-function editDialog(id: string, name: string, comment?: string, parent_id?: string | null) {
+function editDept(row: Department) {
   isEdit.value = true;
-  editId.value = id;
+  editId.value = row.id;
   newDept.value = {
-    name,
-    comment: comment ?? '',
-    parent_id: parent_id ?? null,
+    name: row.name,
+    comment: row.comment ?? '',
+    parent_id: row.parent_id,
+    organization_id: row.organization_id,
   };
-  openDialog.value = true;
+  addDialog.value = true;
 }
 
 function resetForm() {
-  openDialog.value = false;
+  addDialog.value = false;
   isEdit.value = false;
   editId.value = null;
-  newDept.value = { name: '', comment: '', parent_id: null };
+  newDept.value = { name: '', comment: '', parent_id: null, organization_id: '' };
 }
 
-function sortByHierarchy(list: typeof rows.value, parentId: string | null = null) {
-  const result: typeof rows.value = [];
-  const items = list.filter((r) => r.parent_id === parentId);
-  for (const item of items) {
-    result.push(item);
-    result.push(...sortByHierarchy(list, item.id));
-  }
-  return result;
-}
-
-onMounted(() => {
+onMounted(async () => {
   isMounted.value = true;
-  void loadOrgs();
+  await organizationsStore.fetchOrganizations();
 });
 </script>
