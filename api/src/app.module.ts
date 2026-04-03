@@ -6,6 +6,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { PositionsModule } from './positions/positions.module';
 import { EmployeesModule } from './employees/employees.module';
+import { PassportsModule } from './passports/passports.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { EmployeesModule } from './employees/employees.module';
     DepartmentsModule,
     PositionsModule,
     EmployeesModule,
+    PassportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
