@@ -11,7 +11,6 @@ export const useDepartmentsStore = defineStore('departments', {
 
   getters: {
     count: (state) => state.items.length,
-    // Полезный геттер для построения дерева
     byParentId: (state) => (parentId: string | null) =>
       state.items.filter((d) => d.parent_id === parentId),
   },
