@@ -43,5 +43,13 @@ const navLinks = [
       { title: 'Должности', icon: 'badge', link: '/pos' },
     ],
   },
+  {
+    title: 'Управление',
+    links: [
+      { title: 'Сотрудники', icon: 'people', link: '/emp' },
+      { title: 'Документы', icon: 'event_note', link: '/doc' },
+      { title: 'Зарплата', icon: 'attach_money', link: '/pay' },
+    ],
+  },
 ];
 </script>
