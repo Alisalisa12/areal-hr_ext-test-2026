@@ -2,10 +2,15 @@ import { Injectable, Inject } from '@nestjs/common';
 import { PG_CONNECTION } from '../constants';
 import { Pool, QueryResult } from 'pg';
 import { EmployeeEntity } from './entities/employee.entity';
+import { AuditLogService } from '../audit_log/audit_log.service';
+import { EntityType } from '../audit_log/entities/audit_log.entity';
 
 @Injectable()
 export class EmployeesService {
-  constructor(@Inject(PG_CONNECTION) private readonly pool: Pool) {}
+  constructor(
+    @Inject(PG_CONNECTION) private readonly pool: Pool,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
   async getAll(): Promise<EmployeeEntity[]> {
     const res: QueryResult<EmployeeEntity> = await this.pool.query(
@@ -26,13 +31,25 @@ export class EmployeesService {
       [last_name, first_name, middle_name ?? null, birth_date],
     );
 
-    return res.rows[0];
+    const newEmp = res.rows[0];
+
+    await this.auditLogService.logChanges(newEmp.id, EntityType.EMPLOYEES, {}, {
+      last_name: newEmp.last_name,
+      first_name: newEmp.first_name,
+      middle_name: newEmp.middle_name,
+      birth_date: newEmp.birth_date,
+    } as unknown as Record<string, unknown>);
+
+    return newEmp;
   }
 
   async update(
     id: string,
     data: Partial<EmployeeEntity>,
   ): Promise<EmployeeEntity | null> {
+    const oldEmp = await this.getById(id);
+    if (!oldEmp) return null;
+
     const { last_name, first_name, middle_name, birth_date } = data;
 
     const res: QueryResult<EmployeeEntity> = await this.pool.query(
@@ -54,15 +71,41 @@ export class EmployeesService {
       ],
     );
 
-    return res.rows[0] || null;
+    const updatedEmp = res.rows[0] || null;
+
+    if (updatedEmp) {
+      await this.auditLogService.logChanges(
+        id,
+        EntityType.EMPLOYEES,
+        oldEmp as unknown as Record<string, unknown>,
+        updatedEmp as unknown as Record<string, unknown>,
+      );
+    }
+
+    return updatedEmp;
   }
 
   async delete(id: string): Promise<boolean> {
+    const oldEmp = await this.getById(id);
+
     const res = await this.pool.query(
       'UPDATE employees SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL',
       [id],
     );
-    return (res.rowCount ?? 0) > 0;
+
+    const deleted = (res.rowCount ?? 0) > 0;
+
+    if (deleted && oldEmp) {
+      await this.auditLogService.create({
+        entity_id: id,
+        entity_type: EntityType.EMPLOYEES,
+        field_name: 'deleted',
+        old_value: `${oldEmp.last_name} ${oldEmp.first_name}`,
+        new_value: 'удалено',
+      });
+    }
+
+    return deleted;
   }
 
   async getById(id: string): Promise<EmployeeEntity | null> {
