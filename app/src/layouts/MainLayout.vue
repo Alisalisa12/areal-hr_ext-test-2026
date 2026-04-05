@@ -46,9 +46,10 @@ const navLinks = [
   {
     title: 'Управление',
     links: [
-      { title: 'Сотрудники', icon: 'people', link: '/emp' },
-      { title: 'Документы', icon: 'event_note', link: '/doc' },
-      { title: 'Зарплата', icon: 'attach_money', link: '/pay' },
+      { title: 'Сотрудники', icon: 'group', link: '/emp' },
+      { title: 'Файлы', icon: 'folder_open', link: '/doc' },
+      { title: 'HR операции', icon: 'swap_horiz', link: '/hr' },
+      { title: 'Логи', icon: 'history', link: '/log' },
     ],
   },
 ];
