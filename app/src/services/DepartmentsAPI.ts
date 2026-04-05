@@ -1,6 +1,11 @@
 import API from './API';
 import type { Department, CreateDepartmentDto, UpdateDepartmentDto } from '../models/Department';
 
+export async function getAllDepartments(): Promise<Department[]> {
+  const { data } = await API.get<Department[]>('/departments');
+  return data;
+}
+
 export const getDepartments = async (orgId: string): Promise<Department[]> => {
   const { data } = await API.get<Department[]>(`/departments/organization/${orgId}`);
   return data;
