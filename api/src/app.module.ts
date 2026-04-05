@@ -8,6 +8,11 @@ import { PositionsModule } from './positions/positions.module';
 import { EmployeesModule } from './employees/employees.module';
 import { PassportsModule } from './passports/passports.module';
 import { AddressesModule } from './addresses/addresses.module';
+import { HrOperationsModule } from './hr_operations/hr_operations.module';
+import { SalaryChangesModule } from './salary_changes/salary_changes.module';
+import { AuditLogModule } from './audit_log/audit_log.module';
+import { FileCategoriesModule } from './file_categories/file_categories.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -18,6 +23,11 @@ import { AddressesModule } from './addresses/addresses.module';
     EmployeesModule,
     PassportsModule,
     AddressesModule,
+    HrOperationsModule,
+    SalaryChangesModule,
+    AuditLogModule,
+    FileCategoriesModule,
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
