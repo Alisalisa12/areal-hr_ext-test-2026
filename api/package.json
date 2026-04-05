@@ -24,14 +24,18 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/mapped-types": "*",
-    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-express": "^11.1.18",
+    "@types/uuid": "^10.0.0",
     "dotenv": "^17.3.1",
     "joi": "^18.1.1",
+    "minio": "^8.0.7",
+    "multer": "^2.1.1",
     "nestjs-joi": "^1.12.0",
     "node-pg-migrate": "^8.0.4",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

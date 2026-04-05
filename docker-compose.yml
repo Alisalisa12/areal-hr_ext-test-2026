@@ -14,6 +14,7 @@ services:
     restart: always
     networks:
       - hr_network
+
 # Frontend(Vue.js/Quasar)
   app:
     build:
@@ -27,6 +28,7 @@ services:
       - api
     networks:
       - hr_network
+
 # Backend (Nest.js)
   api:
     build:
@@ -42,9 +44,9 @@ services:
       db:
         condition: service_healthy
     networks:
-    - hr_network
+      - hr_network
 
-# Database (PstgreSQL)
+# Database (PostgreSQL)
   db:
     image: postgres:17-alpine
     container_name: hr_postgres_db
@@ -66,10 +68,27 @@ services:
     networks:
       - hr_network
 
+# MinIO
+  minio:
+    image: minio/minio
+    container_name: hr_minio
+    ports:
+      - "9000:9000"   
+      - "9001:9001"   
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - hr_network
+
 volumes:
   pgdata:
     driver: local
+  minio_data:      
 
 networks:
-  hr_network:
-      driver: bridge
+  hr_network:      
+    driver: bridge
