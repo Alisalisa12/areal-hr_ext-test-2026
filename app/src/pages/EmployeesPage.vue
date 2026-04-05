@@ -3,13 +3,13 @@
     <q-page padding>
       <teleport to="#header-actions" v-if="isMounted">
         <q-toolbar-title>Сотрудники</q-toolbar-title>
+
+        <q-space />
         <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
           <template v-slot:append>
             <q-icon name="search" />
           </template>
         </q-input>
-        <q-space />
-
         <q-btn
           flat
           color="primary"
