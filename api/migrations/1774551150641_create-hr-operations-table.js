@@ -22,29 +22,22 @@ export const up = (pgm) => {
       primaryKey: true,
       default: pgm.func('gen_random_uuid()'),
     },
-    emp_id: {
+    employee_id: {
       type: 'uuid',
       notNull: true,
       references: '"employees"',
       onDelete: 'RESTRICT',
     },
-    dept_id: {
+    department_id: {
       type: 'uuid',
       notNull: true,
       references: '"departments"',
       onDelete: 'RESTRICT',
     },
-    pos_id: {
+    position_id: {
       type: 'uuid',
       notNull: true,
       references: '"positions"',
-      onDelete: 'RESTRICT',
-    },
-
-    created_by: {
-      type: 'uuid',
-      notNull: true,
-      references: '"users"',
       onDelete: 'RESTRICT',
     },
     type: {
@@ -64,10 +57,9 @@ export const up = (pgm) => {
     deleted_at: { type: 'timestamptz' },
   });
 
-  pgm.createIndex('hr_operations', 'emp_id');
-  pgm.createIndex('hr_operations', 'dept_id');
-  pgm.createIndex('hr_operations', 'pos_id');
-  pgm.createIndex('hr_operations', 'created_by');
+  pgm.createIndex('hr_operations', 'employee_id');
+  pgm.createIndex('hr_operations', 'department_id');
+  pgm.createIndex('hr_operations', 'position_id');
   pgm.createIndex('hr_operations', 'type');
   pgm.createIndex('hr_operations', 'deleted_at');
 
@@ -89,10 +81,9 @@ export const down = (pgm) => {
     'DROP TRIGGER IF EXISTS update_hr_operations_updated_at ON hr_operations;',
   );
   pgm.dropIndex('hr_operations', 'type');
-  pgm.dropIndex('hr_operations', 'created_by');
-  pgm.dropIndex('hr_operations', 'pos_id');
-  pgm.dropIndex('hr_operations', 'dept_id');
-  pgm.dropIndex('hr_operations', 'emp_id');
+  pgm.dropIndex('hr_operations', 'position_id');
+  pgm.dropIndex('hr_operations', 'department_id');
+  pgm.dropIndex('hr_operations', 'employee_id');
   pgm.dropIndex('hr_operations', 'deleted_at');
   pgm.dropTable('hr_operations');
   pgm.dropType('hr_operation_type_enum');
