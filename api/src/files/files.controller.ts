@@ -23,7 +23,7 @@ interface MulterFile {
 
 @Controller('/files')
 export class FilesController {
-  constructor(private readonly filesService: FilesService) { }
+  constructor(private readonly filesService: FilesService) {}
 
   @Get()
   async getAll(): Promise<FileEntity[]> {
