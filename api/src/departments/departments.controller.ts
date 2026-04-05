@@ -19,7 +19,12 @@ import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
 
 @Controller('/departments')
 export class DepartmentsController {
-  constructor(private readonly departmentsService: DepartmentsService) {}
+  constructor(private readonly departmentsService: DepartmentsService) { }
+
+  @Get()
+  async getAll() {
+    return this.departmentsService.findAll();
+  }
 
   @Get('organization/:orgId')
   async getByOrg(@Param('orgId') orgId: string) {

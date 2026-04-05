@@ -7,6 +7,13 @@ import { DepartmentEntity } from './entities/department.entity';
 export class DepartmentsService {
   constructor(@Inject(PG_CONNECTION) private readonly pool: Pool) {}
 
+  async findAll(): Promise<DepartmentEntity[]> {
+    const res: QueryResult<DepartmentEntity> = await this.pool.query(
+      'SELECT * FROM departments WHERE deleted_at IS NULL ORDER BY name ASC',
+    );
+    return res.rows;
+  }
+
   async getByOrg(orgId: string): Promise<DepartmentEntity[]> {
     const res: QueryResult<DepartmentEntity> = await this.pool.query(
       'SELECT * FROM departments WHERE organization_id = $1 AND deleted_at IS NULL ORDER BY name ASC',
