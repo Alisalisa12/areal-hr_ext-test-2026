@@ -7,9 +7,11 @@ export const createDepartmentSchema = Joi.object({
     'any.required': 'Поле "название" обязательно',
   }),
   comment: Joi.string().max(500).allow('', null).optional(),
+  organization_id: Joi.string().uuid().required(),
+  parent_id: Joi.string().uuid().allow(null).optional(),
 });
 
 export const updateDepartmentSchema = createDepartmentSchema.fork(
-  ['name', 'comment'],
+  ['name', 'comment', 'organization_id', 'parent_id'],
   (schema) => schema.optional(),
 );
