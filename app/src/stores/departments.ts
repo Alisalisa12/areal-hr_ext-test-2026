@@ -6,6 +6,7 @@ import { Notify } from 'quasar';
 export const useDepartmentsStore = defineStore('departments', {
   state: () => ({
     items: [] as Department[],
+    currentOrgId: null as string | null,
     isLoading: false,
   }),
 
@@ -16,6 +17,16 @@ export const useDepartmentsStore = defineStore('departments', {
   },
 
   actions: {
+    async fetchAll() {
+      this.isLoading = true;
+      try {
+        this.items = await departmentsApi.getAllDepartments();
+        this.currentOrgId = null;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
     async fetchByOrganization(orgId: string) {
       this.isLoading = true;
       try {
@@ -29,7 +40,7 @@ export const useDepartmentsStore = defineStore('departments', {
       const newDept = await departmentsApi.createDepartment(payload);
       this.items.push(newDept);
 
-      Notify.create({ type: 'positive', message: 'Департамент успешно добавлен' });
+      Notify.create({ type: 'positive', message: 'Отдел успешно добавлен' });
     },
 
     async editDepartment(id: string, payload: UpdateDepartmentDto) {
@@ -38,13 +49,13 @@ export const useDepartmentsStore = defineStore('departments', {
       if (index !== -1) {
         this.items[index] = updatedDept;
       }
-      Notify.create({ type: 'positive', message: 'Департамент обновлен' });
+      Notify.create({ type: 'positive', message: 'Отдел успешно обновлен' });
     },
 
     async removeDepartment(id: string) {
       await departmentsApi.deleteDepartment(id);
       this.items = this.items.filter((item) => item.id !== id);
-      Notify.create({ type: 'positive', message: 'Департамент удален' });
+      Notify.create({ type: 'positive', message: 'Отдел удален' });
     },
   },
 });
