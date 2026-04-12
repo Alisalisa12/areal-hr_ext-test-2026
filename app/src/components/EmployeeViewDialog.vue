@@ -13,6 +13,23 @@
         </q-avatar>
         <div class="col">
           <div class="text-subtitle1 text-weight-bold">{{ fullName }}</div>
+          <div class="column q-gutter-y-xs">
+            <div
+              v-if="employee?.position_name"
+              class="text-caption text-primary text-weight-medium"
+            >
+              {{ employee.position_name }}
+            </div>
+
+            <div class="text-caption text-grey-8" style="line-height: 1.2">
+              <span v-if="employee?.organization_name">{{ employee.organization_name }}</span>
+              <span v-if="employee?.department_name"> - {{ employee.department_name }}</span>
+            </div>
+
+            <div v-if="employee?.hire_date" class="text-caption text-grey-6">
+              Принят: {{ formatDate(employee.hire_date) }}
+            </div>
+          </div>
         </div>
       </q-card-section>
 

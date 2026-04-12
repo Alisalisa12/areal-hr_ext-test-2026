@@ -2,13 +2,44 @@
   <div>
     <q-page padding>
       <teleport to="#header-actions" v-if="isMounted">
-        <q-toolbar-title>Отделы</q-toolbar-title>
+        <q-toolbar-title class="text-subtitle1 text-weight-bold">Отделы</q-toolbar-title>
+      </teleport>
+
+      <div class="row items-stretch">
+        <q-input v-model="filter" outlined rounded dense placeholder="Поиск" style="width: 260px">
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+
         <q-space />
 
+        <q-select
+          v-model="selectedOrgId"
+          :options="organizationsStore.items.filter((o) => !o.deleted_at)"
+          option-label="name"
+          option-value="id"
+          emit-value
+          map-options
+          label="Организация"
+          standout="bg-primary text-white"
+          bg-color="primary"
+          label-color="white"
+          dense
+          rounded
+          clearable
+          options-dense
+          style="min-width: 200px"
+          class="text-caption q-mr-sm custom-select-white"
+          @update:model-value="loadDepartments"
+          )
+        />
+
         <q-btn
-          flat
           color="primary"
           icon="add"
+          rounded
+          class="text-caption"
           label="Добавить отдел"
           :disable="!selectedOrgId"
           @click="
@@ -16,7 +47,7 @@
             addDialog = true;
           "
         />
-      </teleport>
+      </div>
 
       <div class="q-pa-md">
         <q-table
@@ -31,29 +62,6 @@
           :loading="departmentsStore.isLoading"
           no-data-label="Данные не найдены или еще не загружены"
         >
-          <template v-slot:top-right>
-            <div class="row q-gutter-sm">
-              <q-select
-                v-model="selectedOrgId"
-                :options="organizationsStore.items.filter((o) => !o.deleted_at)"
-                option-label="name"
-                option-value="id"
-                emit-value
-                map-options
-                label="Организация"
-                dense
-                outlined
-                style="min-width: 200px"
-                @update:model-value="loadDepartments"
-              />
-              <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
-                <template v-slot:append>
-                  <q-icon name="search" />
-                </template>
-              </q-input>
-            </div>
-          </template>
-
           <template v-slot:body-cell-name="props">
             <q-td :props="props">
               <div
@@ -72,7 +80,6 @@
               </div>
             </q-td>
           </template>
-
           <template v-slot:body-cell-deleted_at="props">
             <q-td :props="props" class="text-center">
               <q-badge :color="props.value ? 'negative' : 'positive'" class="q-pa-xs">
@@ -178,7 +185,19 @@ const newDept = ref<CreateDepartmentDto>({
   organization_id: '',
 });
 
-const rows = computed(() => departmentsStore.items);
+const rows = computed(() => {
+  return sortByHierarchy(departmentsStore.items);
+});
+
+function sortByHierarchy(list: Department[], parentId: string | null = null) {
+  const result: Department[] = [];
+  const items = list.filter((r) => r.parent_id === parentId);
+  for (const item of items) {
+    result.push(item);
+    result.push(...sortByHierarchy(list, item.id));
+  }
+  return result;
+}
 
 const columns: QTableColumn[] = [
   { name: 'name', label: 'Название', field: 'name', align: 'left', sortable: true },

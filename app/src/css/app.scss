@@ -1,1 +1,8 @@
-// app global css in SCSS form
+.q-table__container {
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.q-table tbody tr:nth-of-type(even) {
+  background-color: #f2f2f2 !important;
+}

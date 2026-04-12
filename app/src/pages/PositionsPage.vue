@@ -2,41 +2,41 @@
   <div>
     <q-page padding>
       <teleport to="#header-actions" v-if="isMounted">
-        <q-toolbar-title>Должности</q-toolbar-title>
+        <q-toolbar-title class="text-subtitle1 text-weight-bold">Должности</q-toolbar-title>
+      </teleport>
+
+      <div class="row items-stretch">
+        <q-input v-model="filter" outlined rounded dense placeholder="Поиск" style="width: 260px">
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+
         <q-space />
 
         <q-btn
-          flat
           color="primary"
           icon="add"
+          rounded
+          class="text-caption"
           label="Добавить должность"
           @click="
             resetForm();
             addDialog = true;
           "
         />
-      </teleport>
-
+      </div>
       <div class="q-pa-md">
         <q-table
           :grid="$q.screen.xs"
           flat
           bordered
-          title="Должности"
           :rows="rows"
           :columns="columns"
           row-key="id"
           :filter="filter"
           no-data-label="Данные не найдены или еще не загружены"
         >
-          <template v-slot:top-right>
-            <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
-              <template v-slot:append>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-          </template>
-
           <template v-slot:body-cell-deleted_at="props">
             <q-td :props="props" class="text-center">
               <q-badge :color="props.value ? 'negative' : 'positive'" class="q-pa-xs">

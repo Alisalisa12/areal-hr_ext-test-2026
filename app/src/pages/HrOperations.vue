@@ -2,26 +2,29 @@
   <div>
     <q-page padding>
       <teleport to="#header-actions" v-if="isMounted">
-        <q-toolbar-title>Операции</q-toolbar-title>
+        <q-toolbar-title class="text-subtitle1 text-weight-bold">Операции</q-toolbar-title>
+      </teleport>
 
-        <q-space />
-        <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
+      <div class="row items-stretch">
+        <q-input v-model="filter" outlined rounded dense placeholder="Поиск" style="width: 260px">
           <template v-slot:append>
             <q-icon name="search" />
           </template>
         </q-input>
+        <q-space />
+
         <q-btn
-          flat
           color="primary"
           icon="add"
+          rounded
+          class="text-caption"
           label="Новая операция"
           @click="
             resetForm();
             addDialog = true;
           "
         />
-      </teleport>
-
+      </div>
       <div class="q-pa-md">
         <q-table
           :grid="$q.screen.xs"
@@ -148,7 +151,7 @@
               type="number"
               dense
               outlined
-              :rules="[(val) => (val > 0) || 'Введите корректную сумму']"
+              :rules="[(val) => val > 0 || 'Введите корректную сумму']"
             />
             <q-input
               v-model="newOp.reason"
@@ -222,56 +225,34 @@ const newOp = ref<HrOperationForm>({ ...emptyOp });
 
 const rows = computed(() => hrStore.items);
 
-const columns: QTableColumn[] = [
+const columns: QTableColumn<HrOperation>[] = [
   {
     name: 'type',
     label: 'Тип',
-    field: (row: HrOperation) => getTypeLabel(row.type),
+    field: (row) => HrOperationTypeLabels[row.type],
     align: 'left',
     sortable: true,
   },
   {
     name: 'organization',
     label: 'Организация',
-    field: (row: HrOperation) => getOrganizationName(row),
+    field: 'organization_name',
     align: 'left',
     sortable: true,
   },
-  {
-    name: 'employee',
-    label: 'Сотрудник',
-    field: (row: HrOperation) => getEmployeeName(row.employee_id),
-    align: 'left',
-    sortable: true,
-  },
-  {
-    name: 'position',
-    label: 'Должность',
-    field: (row: HrOperation) => getPositionName(row.position_id),
-    align: 'left',
-    sortable: true,
-  },
-  {
-    name: 'old_salary',
-    label: 'Старый оклад',
-    field: (row: HrOperation) => getSalaryField(row.id, 'old'),
-    align: 'center',
-  },
-  {
-    name: 'new_salary',
-    label: 'Новый оклад',
-    field: (row: HrOperation) => getSalaryField(row.id, 'new'),
-    align: 'center',
-  },
+  { name: 'employee', label: 'Сотрудник', field: 'employee_name', align: 'left', sortable: true },
+  { name: 'position', label: 'Должность', field: 'position_name', align: 'left', sortable: true },
+  { name: 'old_salary', label: 'Старый оклад', field: 'old_salary', align: 'center' },
+  { name: 'new_salary', label: 'Новый оклад', field: 'new_salary', align: 'center' },
   {
     name: 'created_at',
     label: 'Дата',
     field: 'created_at',
     align: 'center',
     sortable: true,
-    format: (val) => (val ? date.formatDate(val as string, 'DD.MM.YYYY') : '-'),
+    format: (val: string) => (val ? date.formatDate(val, 'DD.MM.YYYY') : '-'),
   },
-  { name: 'actions', label: 'Действия', field: 'actions', align: 'center' },
+  { name: 'actions', label: 'Действия', field: 'id', align: 'center' },
 ];
 
 const hiredEmployeeId = computed(() => {
@@ -307,12 +288,10 @@ const positionOptions = computed(() =>
   positionsStore.items.map(({ name, id }) => ({ label: name, value: id })),
 );
 
-const typeOptions = computed(() =>
-  Object.values(HrOperationType).map((value) => ({
-    label: HrOperationTypeLabels[value],
-    value,
-  })),
-);
+const typeOptions = Object.values(HrOperationType).map((value) => ({
+  label: HrOperationTypeLabels[value],
+  value,
+}));
 
 const showJobFields = computed(() =>
   [HrOperationType.HIRE, HrOperationType.TRANSFER].includes(newOp.value.type),
@@ -322,42 +301,12 @@ const showSalaryFields = computed(() =>
   [HrOperationType.HIRE, HrOperationType.SALARY_CHANGE].includes(newOp.value.type),
 );
 
-
-
 watch(
   () => newOp.value.organization_id,
   async (id) => {
     if (id) await departmentsStore.fetchByOrganization(id);
   },
 );
-
-
-
-function getTypeLabel(type: HrOperationType): string {
-  return HrOperationTypeLabels[type];
-}
-
-function getEmployeeName(id: string): string {
-  const emp = employeesStore.items.find((e) => e.id === id);
-  return emp ? `${emp.last_name} ${emp.first_name}` : '—';
-}
-
-function getPositionName(id: string): string {
-  return positionsStore.items.find((p) => p.id === id)?.name ?? '—';
-}
-
-function getOrganizationName(op: HrOperation): string {
-  const dept = departmentsStore.items.find((d) => d.id === op.department_id);
-  if (!dept) return '—';
-  const org = organizationsStore.items.find((o) => o.id === dept.organization_id);
-  return org ? org.name : '—';
-}
-
-function getSalaryField(operationId: string, field: 'old' | 'new'): string {
-  const salary = salaryStore.items.find((s) => s.operation_id === operationId);
-  if (!salary) return '—';
-  return field === 'old' ? String(salary.old_salary ?? '—') : String(salary.new_salary);
-}
 
 function getEmployeeCurrentSalary(empId: string): number {
   const lastSalary = [...hrStore.items]
@@ -367,7 +316,6 @@ function getEmployeeCurrentSalary(empId: string): number {
     .find(Boolean);
   return lastSalary ? Number(lastSalary.new_salary) : 0;
 }
-
 
 function onTypeChange() {
   const { employee_id } = newOp.value;
@@ -457,6 +405,7 @@ async function saveOperation(): Promise<void> {
 
 async function confirmDelete(id: string) {
   await hrStore.removeHrOperation(id);
+  await hrStore.fetchHrOperations();
 }
 
 function deleteOp(id: string) {

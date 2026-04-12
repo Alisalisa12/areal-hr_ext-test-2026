@@ -6,12 +6,32 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="drawer" show-if-above :width="260" :breakpoint="500" class="bg-primary">
+    <q-drawer v-model="drawer" show-if-above :width="260" :breakpoint="500">
       <q-list padding class="menu-list">
-        <q-item-label header class="text-white text-h6 items-center">
-          <q-icon name="people" class="q-mr-md" size="sm" />
-          Учет сотрудников
-        </q-item-label>
+        <div class="q-px-md q-pt-md q-pb-sm">
+  <div class="row items-center no-wrap">
+
+    <q-avatar
+      square
+      size="38px"
+      color="white"
+      text-color="primary"
+      icon="badge"
+      class="rounded-borders q-mr-md"
+    />
+
+    <div class="column">
+      <div class="text-white text-h6 text-weight-bolder" style="line-height: 1.1">
+        Учет кадров
+      </div>
+      <div class="text-secondary text-caption text-uppercase opacity-80" style="font-size: 10px">
+        Система управления
+      </div>
+    </div>
+
+  </div>
+</div>
+
         <q-separator dark class="q-mb-sm bg-secondary q-mx-md" style="height: 1px; opacity: 0.2" />
 
         <template v-for="group in navLinks" :key="group.title">
@@ -54,3 +74,13 @@ const navLinks = [
   },
 ];
 </script>
+<style scoped>
+:deep(.q-drawer) {
+  background: transparent !important;
+}
+
+:deep(.q-drawer__content) {
+  background: #7e7bec;
+  border-radius: 0 24px 24px 0;
+}
+</style>

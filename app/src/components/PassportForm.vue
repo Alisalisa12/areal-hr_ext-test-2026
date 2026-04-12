@@ -1,10 +1,12 @@
 <template>
-  <q-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" persistent>
+  <q-dialog
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
+    persistent
+  >
     <q-card style="min-width: 450px; border-radius: 12px">
       <q-card-section class="q-pb-none">
-        <div class="text-h6 text-weight-bold">
-          {{ isEdit ? 'Редактировать' : 'Новый' }} паспорт
-        </div>
+        <div class="text-h6 text-weight-bold">{{ isEdit ? 'Редактировать' : 'Новый' }} паспорт</div>
       </q-card-section>
 
       <q-card-section class="q-gutter-y-sm q-pt-md">
@@ -16,7 +18,7 @@
           outlined
           dense
           placeholder="0000 000000"
-          :rules="[val => !!val || 'Обязательно', val => val.length === 10 || '10 цифр']"
+          :rules="[(val) => !!val || 'Обязательно', (val) => val.length === 10 || '10 цифр']"
         />
         <q-input
           v-model="form.issue_date"
@@ -25,7 +27,7 @@
           stack-label
           outlined
           dense
-          :rules="[val => !!val || 'Обязательно']"
+          :rules="[(val) => !!val || 'Обязательно']"
         />
         <q-input
           v-model="form.issuer_code"
@@ -35,7 +37,7 @@
           outlined
           dense
           placeholder="000-000"
-          :rules="[val => !!val || 'Обязательно']"
+          :rules="[(val) => !!val || 'Обязательно']"
         />
         <q-input
           v-model="form.issued_by"
@@ -44,7 +46,7 @@
           autogrow
           outlined
           dense
-          :rules="[val => !!val || 'Обязательно']"
+          :rules="[(val) => !!val || 'Обязательно']"
         />
       </q-card-section>
 
@@ -82,32 +84,35 @@ const form = ref<CreatePassportDto>({
   issued_by: '',
 });
 
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    isEdit.value = !!props.data;
-    if (props.data) {
-      form.value = {
-        employee_id: props.data.employee_id,
-        full_passport: props.data.series + props.data.number,
-        issue_date: date.formatDate(props.data.issue_date, 'YYYY-MM-DD'),
-        issuer_code: props.data.issuer_code,
-        issued_by: props.data.issued_by,
-        series: props.data.series,
-        number: props.data.number,
-      };
-    } else {
-      form.value = {
-        employee_id: props.employeeId,
-        series: '',
-        number: '',
-        issue_date: '',
-        issuer_code: '',
-        issued_by: '',
-        full_passport: '',
-      };
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      isEdit.value = !!props.data;
+      if (props.data) {
+        form.value = {
+          employee_id: props.data.employee_id,
+          full_passport: props.data.series + props.data.number,
+          issue_date: date.formatDate(props.data.issue_date, 'YYYY-MM-DD'),
+          issuer_code: props.data.issuer_code,
+          issued_by: props.data.issued_by,
+          series: props.data.series,
+          number: props.data.number,
+        };
+      } else {
+        form.value = {
+          employee_id: props.employeeId,
+          series: '',
+          number: '',
+          issue_date: '',
+          issuer_code: '',
+          issued_by: '',
+          full_passport: '',
+        };
+      }
     }
-  }
-});
+  },
+);
 
 async function onSave() {
   if (isEdit.value && props.data?.id) {

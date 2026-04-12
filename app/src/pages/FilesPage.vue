@@ -2,16 +2,48 @@
   <div>
     <q-page padding>
       <teleport to="#header-actions" v-if="isMounted">
-        <q-toolbar-title>Файлы</q-toolbar-title>
+        <q-toolbar-title class="text-subtitle1 text-weight-bold">Файлы</q-toolbar-title>
+      </teleport>
+
+      <div class="row items-stretch">
+        <q-input v-model="filter" outlined rounded dense placeholder="Поиск" style="width: 260px">
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+
         <q-space />
+
+        <q-select
+          v-model="selectedEmployeeId"
+          :options="employeeOptions"
+          :display-value="selectedEmployeeId ? undefined : 'Все сотрудники'"
+          option-value="value"
+          option-label="label"
+          placeholder="Все сотрудники"
+          standout="bg-primary text-white"
+          bg-color="primary"
+          label-color="white"
+          dense
+          rounded
+          clearable
+          options-dense
+          style="min-width: 200px"
+          class="text-caption q-mr-sm custom-select-white"
+          emit-value
+          map-options
+          color="white"
+          @update:model-value="onEmployeeFilter"
+        />
         <q-btn
-          flat
           color="primary"
+          rounded
+          class="text-caption"
           icon="upload"
           label="Загрузить файл"
           @click="uploadDialog = true"
         />
-      </teleport>
+      </div>
 
       <div class="q-pa-md">
         <q-table
@@ -25,37 +57,12 @@
           :loading="filesStore.isLoading"
           no-data-label="Файлы не найдены или ещё не загружены"
         >
-          <template v-slot:top-left>
-            <div class="row items-center q-gutter-sm">
-              <q-select
-                v-model="selectedEmployeeId"
-                :options="employeeOptions"
-                option-value="value"
-                option-label="label"
-                emit-value
-                map-options
-                clearable
-                dense
-                outlined
-                placeholder="Все сотрудники"
-                style="min-width: 220px"
-                @update:model-value="onEmployeeFilter"
-              />
-            </div>
-          </template>
-
-          <template v-slot:top-right>
-            <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
-              <template v-slot:append>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-          </template>
-
           <template v-slot:body-cell-name="props">
-            <q-td :props="props" class="row items-center q-gutter-xs">
-              <q-icon :name="getMimeIcon(props.row.mime_type)" size="20px" color="grey-6" />
-              <span>{{ props.value }}</span>
+            <q-td :props="props">
+              <div class="row items-center no-wrap q-gutter-xs">
+                <q-icon :name="getMimeIcon(props.row.mime_type)" size="20px" color="grey-6" />
+                <div class="ellipsis">{{ props.value }}</div>
+              </div>
             </q-td>
           </template>
 

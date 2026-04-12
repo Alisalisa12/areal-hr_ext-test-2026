@@ -2,14 +2,14 @@
   <div>
     <q-page padding>
       <teleport to="#header-actions" v-if="isMounted">
-        <q-toolbar-title>Журнал аудита</q-toolbar-title>
-        <q-space />
-        <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
-          <template v-slot:append>
-            <q-icon name="search" />
-          </template>
-        </q-input>
+        <q-toolbar-title class="text-subtitle1 text-weight-bold">Журнал аудита</q-toolbar-title>
       </teleport>
+
+      <q-input v-model="filter" outlined rounded dense placeholder="Поиск" style="width: 260px">
+        <template v-slot:append>
+          <q-icon name="search" />
+        </template>
+      </q-input>
 
       <div class="q-pa-md">
         <q-table

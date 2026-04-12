@@ -2,37 +2,109 @@
   <div>
     <q-page padding>
       <teleport to="#header-actions" v-if="isMounted">
-        <q-toolbar-title>Сотрудники</q-toolbar-title>
+        <q-toolbar-title class="text-subtitle1 text-weight-bold">Сотрудники</q-toolbar-title>
+      </teleport>
 
-        <q-space />
-        <q-input borderless dense debounce="300" v-model="filter" placeholder="Поиск">
+      <div class="row items-stretch">
+        <q-input v-model="filter" outlined rounded dense placeholder="Поиск" style="width: 260px">
           <template v-slot:append>
             <q-icon name="search" />
           </template>
         </q-input>
-        <q-btn
-          flat
-          color="primary"
-          icon="add"
-          label="Добавить сотрудника"
-          @click="
-            resetForm();
-            addDialog = true;
-          "
-        />
-      </teleport>
+
+        <q-space />
+
+        <div class="row q-gutter-sm">
+          <q-btn-dropdown
+            color="primary"
+            icon="filter_alt"
+            rounded
+            label="Фильтры"
+            class="text-caption"
+          >
+            <q-list style="min-width: 280px" class="q-pa-xs">
+              <q-item>
+                <q-item-section>
+                  <q-select
+                    v-model="selectedOrg"
+                    :options="optionsOrgs"
+                    label="Организация"
+                    dense
+                    style="font-size: 12px; min-height: 32px"
+                    outlined
+                    rounded
+                    clearable
+                    options-dense
+                  />
+                </q-item-section>
+              </q-item>
+
+              <q-item>
+                <q-item-section>
+                  <q-select
+                    v-model="selectedDept"
+                    :options="optionsDepts"
+                    label="Отдел"
+                    dense
+                    style="font-size: 12px; min-height: 32px"
+                    outlined
+                    rounded
+                    clearable
+                    options-dense
+                  />
+                </q-item-section>
+              </q-item>
+
+              <q-item>
+                <q-item-section>
+                  <q-select
+                    v-model="selectedPosition"
+                    :options="optionsPositions"
+                    label="Должность"
+                    dense
+                    style="font-size: 12px; min-height: 32px"
+                    outlined
+                    rounded
+                    clearable
+                    options-dense
+                  />
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
+          <q-btn
+            color="primary"
+            icon="add"
+            rounded
+            class="text-caption"
+            label="Добавить сотрудника"
+            @click="
+              resetForm();
+              addDialog = true;
+            "
+          />
+        </div>
+      </div>
 
       <div class="q-pa-md">
         <q-table
           :grid="$q.screen.xs"
           flat
           bordered
-          :rows="rows"
+          :rows="filteredRows"
           :columns="columns"
           row-key="id"
           :filter="filter"
+          :filter-method="customFilter"
           no-data-label="Данные не найдены или еще не загружены"
         >
+          <template v-slot:body-cell-status="props">
+            <q-td :props="props" class="text-center">
+              <q-badge :color="props.row.deleted_at ? 'negative' : 'positive'" class="q-pa-xs">
+                {{ props.row.deleted_at ? 'Уволен' : 'Активен' }}
+              </q-badge>
+            </q-td>
+          </template>
           <template v-slot:body-cell-actions="props">
             <q-td :props="props" class="text-center">
               <div class="q-gutter-sm">
@@ -68,7 +140,7 @@
                   size="10px"
                   @click="deleteEmployee(props.row.id)"
                 >
-                  <q-tooltip>Удалить</q-tooltip>
+                  <q-tooltip>Уволить</q-tooltip>
                 </q-btn>
               </div>
             </q-td>
@@ -77,7 +149,7 @@
       </div>
     </q-page>
 
-    <EmployeeViewDialog v-model="viewDialog" :employee="selectedEmployee" @fire="handleFire" />
+    <EmployeeViewDialog v-model="viewDialog" :employee="selectedEmployee" />
 
     <q-dialog v-model="addDialog" persistent @hide="resetForm">
       <q-card style="min-width: 400px">
@@ -131,6 +203,10 @@ import EmployeeViewDialog from '../components/EmployeeViewDialog.vue';
 const $q = useQuasar();
 const employeesStore = useEmployeesStore();
 
+const selectedPosition = ref<string | null>(null);
+const selectedDept = ref<string | null>(null);
+const selectedOrg = ref<string | null>(null);
+
 const isMounted = ref(false);
 const filter = ref('');
 const addDialog = ref(false);
@@ -148,7 +224,6 @@ const emptyEmployee: CreateEmployeeDto = {
 };
 
 const newEmployee = ref<CreateEmployeeDto>({ ...emptyEmployee });
-const rows = computed(() => employeesStore.items);
 
 const columns: QTableColumn[] = [
   {
@@ -165,8 +240,67 @@ const columns: QTableColumn[] = [
     align: 'center',
     format: (val) => (val ? date.formatDate(val as string, 'DD.MM.YYYY') : '-'),
   },
+  {
+    name: 'position_name',
+    label: 'Должность',
+    field: 'position_name',
+    align: 'left',
+    sortable: true,
+  },
+  {
+    name: 'salary',
+    label: 'Зарплата',
+    field: 'salary',
+    align: 'right',
+    sortable: true,
+    format: (val: number) => (val ? `${val.toLocaleString()} ₽` : '—'),
+  },
+  {
+    name: 'status',
+    label: 'Статус',
+    field: (row) => (row.deleted_at ? 'Уволен' : 'Активен'),
+    align: 'center',
+  },
   { name: 'actions', label: 'Действия', field: 'actions', align: 'center' },
 ];
+
+const customFilter = (rows: readonly Employee[], terms: string): Employee[] => {
+  const lowerTerms = terms.toLowerCase();
+  return rows.filter((row: Employee) => {
+    const fullName = `${row.last_name} ${row.first_name} ${row.middle_name || ''}`.toLowerCase();
+    return fullName.includes(lowerTerms);
+  });
+};
+
+const filteredRows = computed(() => {
+  return employeesStore.items.filter((row: Employee) => {
+    const matchesPos = !selectedPosition.value || row.position_name === selectedPosition.value;
+    const matchesDept = !selectedDept.value || row.department_name === selectedDept.value;
+    const matchesOrg = !selectedOrg.value || row.organization_name === selectedOrg.value;
+
+    return matchesPos && matchesDept && matchesOrg;
+  });
+});
+const optionsPositions = computed<string[]>(() => {
+  const items = employeesStore.items
+    .map((e) => e.position_name)
+    .filter((name): name is string => !!name);
+  return [...new Set(items)];
+});
+
+const optionsDepts = computed<string[]>(() => {
+  const items = employeesStore.items
+    .map((e) => e.department_name)
+    .filter((name): name is string => !!name);
+  return [...new Set(items)];
+});
+
+const optionsOrgs = computed<string[]>(() => {
+  const items = employeesStore.items
+    .map((e) => e.organization_name)
+    .filter((name): name is string => !!name);
+  return [...new Set(items)];
+});
 
 async function saveEmployee() {
   if (isEdit.value && editId.value) {
@@ -183,8 +317,8 @@ async function confirmDelete(id: string) {
 
 function deleteEmployee(id: string) {
   $q.dialog({
-    title: 'Удаление',
-    message: 'Вы уверены, что хотите удалить сотрудника?',
+    title: 'Увольнение',
+    message: 'Вы уверены, что хотите уволить сотрудника?',
     cancel: true,
     persistent: true,
   }).onOk(() => {
@@ -216,10 +350,6 @@ function resetForm() {
 function openViewDialog(row: Employee) {
   selectedEmployee.value = row;
   viewDialog.value = true;
-}
-
-function handleFire(employee: Employee | null) {
-  console.log('Увольнение сотрудника:', employee?.last_name);
 }
 
 onMounted(() => {
