@@ -21,6 +21,14 @@ export interface HrOperation {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+
+  employee_name?: string;
+  position_name?: string;
+  department_name?: string;
+  organization_name?: string;
+  old_salary?: number | null;
+  new_salary?: number | null;
+  salary_reason?: string | null;
 }
 
 export interface CreateHrOperationDto {

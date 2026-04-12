@@ -7,6 +7,11 @@ export interface Employee {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  position_name?: string;
+  salary?: number;
+  department_name?: string;
+  organization_name?: string;
+  hire_date?: string;
 }
 
 export interface CreateEmployeeDto {

@@ -19,3 +19,14 @@ export class HrOperationEntity {
     Object.assign(this, partial);
   }
 }
+
+export type FullHrOperation = HrOperationEntity & {
+  employee_name: string;
+  position_name: string;
+  department_name: string;
+  organization_id: string;
+  organization_name: string;
+  old_salary: number | null;
+  new_salary: number | null;
+  salary_reason: string | null;
+};
