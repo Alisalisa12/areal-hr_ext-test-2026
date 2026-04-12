@@ -27,7 +27,7 @@ export const up = (pgm) => {
       references: '"employees"',
       onDelete: 'RESTRICT',
     },
-    login: { type: 'text', notNull: true },
+    login: { type: 'varchar(100)', notNull: true },
     password_hash: { type: 'text', notNull: true },
     created_at: {
       type: 'timestamptz',
