@@ -11,7 +11,7 @@ import {
 import {
   createDepartmentSchema,
   updateDepartmentSchema,
-} from './departments.shema';
+} from './departments.schema';
 import { DepartmentsService } from './departments.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
