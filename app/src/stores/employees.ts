@@ -25,7 +25,7 @@ export const useEmployeesStore = defineStore('employees', {
 
     async addEmployee(payload: CreateEmployeeDto) {
       const newEmp = await employeesApi.createEmployee(payload);
-      this.items.push(newEmp);
+      this.items.unshift(newEmp);
 
       Notify.create({ type: 'positive', message: 'Сотрудник успешно добавлен' });
     },

@@ -29,7 +29,7 @@ export const useOrganizationsStore = defineStore('organizations', {
 
     async addOrganization(payload: CreateOrganizationDto) {
       const newOrg = await organizationsApi.createOrganization(payload);
-      this.items.push(newOrg);
+      this.items.unshift(newOrg);
 
       Notify.create({ type: 'positive', message: 'Организация успешно добавлена' });
     },

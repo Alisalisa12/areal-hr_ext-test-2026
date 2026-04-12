@@ -25,8 +25,7 @@ export const usePositionsStore = defineStore('positions', {
 
     async addPosition(payload: CreatePositionDto) {
       const newPos = await positionsApi.createPosition(payload);
-      this.items.push(newPos);
-
+      this.items.unshift(newPos); 
       Notify.create({ type: 'positive', message: 'Позиция успешно добавлена' });
     },
 

@@ -33,7 +33,7 @@ export class EmployeesService {
         WHERE e.deleted_at IS NULL
         ORDER BY e.id, hro.created_at DESC, sc.changed_at DESC
       ) AS subquery
-      ORDER BY last_name ASC, first_name ASC;
+      ORDER BY created_at DESC;
     `;
     const res: QueryResult<FullEmployee> =
       await this.pool.query<FullEmployee>(query);

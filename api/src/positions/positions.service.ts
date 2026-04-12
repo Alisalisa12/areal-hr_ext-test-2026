@@ -16,7 +16,7 @@ export class PositionsService {
 
   async getAll(): Promise<PositionEntity[]> {
     const res: QueryResult<PositionEntity> = await this.pool.query(
-      'SELECT * FROM positions WHERE deleted_at IS NULL ORDER BY name ASC',
+      'SELECT * FROM positions WHERE deleted_at IS NULL ORDER BY created_at DESC',
     );
     return res.rows;
   }

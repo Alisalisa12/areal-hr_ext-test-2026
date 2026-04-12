@@ -38,7 +38,7 @@ export const useDepartmentsStore = defineStore('departments', {
 
     async addDepartment(payload: CreateDepartmentDto) {
       const newDept = await departmentsApi.createDepartment(payload);
-      this.items.push(newDept);
+      this.items.unshift(newDept);
 
       Notify.create({ type: 'positive', message: 'Отдел успешно добавлен' });
     },
