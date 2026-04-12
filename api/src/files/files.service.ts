@@ -91,26 +91,28 @@ export class FilesService implements OnModuleInit {
 
     const newFile = res.rows[0];
 
-    await this.auditLogService.logChanges(newFile.id, EntityType.FILES, {}, {
-      name: newFile.name,
-      employee_id: newFile.employee_id,
-      category_id: newFile.category_id,
-      storage_path: newFile.storage_path,
-    } as unknown as Record<string, unknown>);
+    await this.auditLogService.logChanges(
+      newFile.id,
+      EntityType.FILES,
+      {},
+      newFile as unknown as Record<string, unknown>,
+    );
 
     return newFile;
   }
 
   async getDownloadUrl(id: string): Promise<string> {
     const file = await this.getById(id);
-    if (!file) throw new NotFoundException('Файл не найден');
+    if (!file) throw new NotFoundException();
 
     return await this.minio.presignedGetObject(BUCKET, file.storage_path, 3600);
   }
 
   async delete(id: string): Promise<boolean> {
     const oldFile = await this.getById(id);
-    if (!oldFile) return false;
+    if (!oldFile) {
+      throw new NotFoundException();
+    }
 
     const res = await this.pool.query(
       `UPDATE files SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL`,
@@ -120,13 +122,13 @@ export class FilesService implements OnModuleInit {
     const deleted = (res.rowCount ?? 0) > 0;
 
     if (deleted) {
-      await this.auditLogService.create({
-        entity_id: id,
-        entity_type: EntityType.FILES,
-        field_name: 'deleted',
-        old_value: oldFile.name,
-        new_value: 'удалено',
-      });
+      await this.auditLogService.logChanges(
+        id,
+        EntityType.FILES,
+        { deleted: oldFile.name },
+        { deleted: true },
+        { true: `Удалено` },
+      );
     }
 
     return deleted;

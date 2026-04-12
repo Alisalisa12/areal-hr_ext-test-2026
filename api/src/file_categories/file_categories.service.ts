@@ -1,9 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { PG_CONNECTION } from '../constants';
 import { Pool, QueryResult } from 'pg';
 import { FileCategoryEntity } from './entities/file_category.entity';
 import { AuditLogService } from '../audit_log/audit_log.service';
 import { EntityType } from '../audit_log/entities/audit_log.entity';
+import { CreateFileCategoryDto } from './dto/create-file_category.dto';
+import { UpdateFileCategoryDto } from './dto/update-file_category.dto';
 
 @Injectable()
 export class FileCategoriesService {
@@ -27,7 +29,7 @@ export class FileCategoriesService {
     return res.rows[0] || null;
   }
 
-  async create(data: Partial<FileCategoryEntity>): Promise<FileCategoryEntity> {
+  async create(data: CreateFileCategoryDto): Promise<FileCategoryEntity> {
     const { name, comment } = data;
 
     const res: QueryResult<FileCategoryEntity> = await this.pool.query(
@@ -43,10 +45,7 @@ export class FileCategoriesService {
       newCategory.id,
       EntityType.FILE_CATEGORIES,
       {},
-      {
-        name: newCategory.name,
-        comment: newCategory.comment,
-      } as unknown as Record<string, unknown>,
+      newCategory as unknown as Record<string, unknown>,
     );
 
     return newCategory;
@@ -54,40 +53,53 @@ export class FileCategoriesService {
 
   async update(
     id: string,
-    data: Partial<FileCategoryEntity>,
-  ): Promise<FileCategoryEntity | null> {
+    data: UpdateFileCategoryDto,
+  ): Promise<FileCategoryEntity> {
     const oldCategory = await this.getById(id);
-    if (!oldCategory) return null;
+    if (!oldCategory) {
+      throw new NotFoundException();
+    }
 
-    const { name, comment } = data;
-
-    const res: QueryResult<FileCategoryEntity> = await this.pool.query(
-      `UPDATE file_categories 
-       SET 
-        name = COALESCE($1, name),
-        comment = COALESCE($2, comment),
-        updated_at = NOW() 
-       WHERE id = $3 AND deleted_at IS NULL 
-       RETURNING *`,
-      [name ?? null, comment ?? null, id],
+    const allowedKeys = ['name', 'comment'];
+    const keys = Object.keys(data).filter(
+      (key) =>
+        allowedKeys.includes(key) &&
+        data[key as keyof UpdateFileCategoryDto] !== undefined,
     );
 
-    const updatedCategory = res.rows[0] || null;
+    if (keys.length === 0) return oldCategory;
 
-    if (updatedCategory) {
-      await this.auditLogService.logChanges(
-        id,
-        EntityType.FILE_CATEGORIES,
-        oldCategory as unknown as Record<string, unknown>,
-        updatedCategory as unknown as Record<string, unknown>,
-      );
+    const setClause = keys.map((key, i) => `"${key}" = $${i + 1}`).join(', ');
+    const values = keys.map((key) => data[key as keyof UpdateFileCategoryDto]);
+
+    const res = await this.pool.query<FileCategoryEntity>(
+      `UPDATE file_categories 
+       SET ${setClause}, updated_at = NOW() 
+       WHERE id = $${keys.length + 1} AND deleted_at IS NULL 
+       RETURNING *`,
+      [...values, id],
+    );
+
+    const updatedCategory = res.rows[0];
+    if (!updatedCategory) {
+      throw new NotFoundException();
     }
+
+    await this.auditLogService.logChanges(
+      id,
+      EntityType.FILE_CATEGORIES,
+      oldCategory as unknown as Record<string, unknown>,
+      updatedCategory as unknown as Record<string, unknown>,
+    );
 
     return updatedCategory;
   }
 
   async delete(id: string): Promise<boolean> {
     const oldCategory = await this.getById(id);
+    if (!oldCategory) {
+      throw new NotFoundException();
+    }
 
     const res = await this.pool.query(
       'UPDATE file_categories SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL',
@@ -96,14 +108,14 @@ export class FileCategoriesService {
 
     const deleted = (res.rowCount ?? 0) > 0;
 
-    if (deleted && oldCategory) {
-      await this.auditLogService.create({
-        entity_id: id,
-        entity_type: EntityType.FILE_CATEGORIES,
-        field_name: 'deleted',
-        old_value: oldCategory.name,
-        new_value: 'удалено',
-      });
+    if (deleted) {
+      await this.auditLogService.logChanges(
+        id,
+        EntityType.FILE_CATEGORIES,
+        { deleted: oldCategory.name },
+        { deleted: true },
+        { true: `Удалено` },
+      );
     }
 
     return deleted;

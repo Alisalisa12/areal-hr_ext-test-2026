@@ -1,9 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { PG_CONNECTION } from '../constants';
 import { Pool, QueryResult } from 'pg';
 import { OrganizationEntity } from './entities/organization.entity';
 import { AuditLogService } from '../audit_log/audit_log.service';
 import { EntityType } from '../audit_log/entities/audit_log.entity';
+import { CreateOrganizationDto } from './dto/create-organization.dto';
+import { UpdateOrganizationDto } from './dto/update-organization.dto';
 
 @Injectable()
 export class OrganizationsService {
@@ -19,7 +21,15 @@ export class OrganizationsService {
     return res.rows;
   }
 
-  async create(data: Partial<OrganizationEntity>): Promise<OrganizationEntity> {
+  async getById(id: string): Promise<OrganizationEntity | null> {
+    const res: QueryResult<OrganizationEntity> = await this.pool.query(
+      'SELECT * FROM organizations WHERE id = $1 AND deleted_at IS NULL',
+      [id],
+    );
+    return res.rows[0] || null;
+  }
+
+  async create(data: CreateOrganizationDto): Promise<OrganizationEntity> {
     const { name, comment } = data;
     const res: QueryResult<OrganizationEntity> = await this.pool.query(
       'INSERT INTO organizations (name, comment) VALUES ($1, $2) RETURNING *',
@@ -31,10 +41,7 @@ export class OrganizationsService {
       newOrg.id,
       EntityType.ORGANIZATIONS,
       {},
-      {
-        name: newOrg.name,
-        comment: newOrg.comment,
-      } as unknown as Record<string, unknown>,
+      newOrg as unknown as Record<string, unknown>,
     );
 
     return newOrg;
@@ -42,33 +49,54 @@ export class OrganizationsService {
 
   async update(
     id: string,
-    data: Partial<OrganizationEntity>,
-  ): Promise<OrganizationEntity | null> {
+    data: UpdateOrganizationDto,
+  ): Promise<OrganizationEntity> {
     const oldOrg = await this.getById(id);
-    if (!oldOrg) return null;
+    if (!oldOrg) {
+      throw new NotFoundException();
+    }
 
-    const { name, comment } = data;
-    const res: QueryResult<OrganizationEntity> = await this.pool.query(
-      'UPDATE organizations SET name = COALESCE($1, name), comment = COALESCE($2, comment), updated_at = NOW() WHERE id = $3 AND deleted_at IS NULL RETURNING *',
-      [name ?? null, comment ?? null, id],
+    const allowedKeys = ['name', 'comment'];
+    const keys = Object.keys(data).filter(
+      (key) =>
+        allowedKeys.includes(key) &&
+        data[key as keyof UpdateOrganizationDto] !== undefined,
     );
 
-    const updatedOrg = res.rows[0] || null;
+    if (keys.length === 0) return oldOrg;
 
-    if (updatedOrg) {
-      await this.auditLogService.logChanges(
-        id,
-        EntityType.ORGANIZATIONS,
-        oldOrg as unknown as Record<string, unknown>,
-        updatedOrg as unknown as Record<string, unknown>,
-      );
+    const setClause = keys.map((key, i) => `"${key}" = $${i + 1}`).join(', ');
+    const values = keys.map((key) => data[key as keyof UpdateOrganizationDto]);
+
+    const res = await this.pool.query<OrganizationEntity>(
+      `UPDATE organizations 
+       SET ${setClause}, updated_at = NOW() 
+       WHERE id = $${keys.length + 1} AND deleted_at IS NULL 
+       RETURNING *`,
+      [...values, id],
+    );
+
+    const updatedOrg = res.rows[0];
+    if (!updatedOrg) {
+      throw new NotFoundException();
     }
+
+    await this.auditLogService.logChanges(
+      id,
+      EntityType.ORGANIZATIONS,
+      oldOrg as unknown as Record<string, unknown>,
+      updatedOrg as unknown as Record<string, unknown>,
+    );
 
     return updatedOrg;
   }
 
   async delete(id: string): Promise<boolean> {
     const oldOrg = await this.getById(id);
+    if (!oldOrg) {
+      throw new NotFoundException();
+    }
+
     const res = await this.pool.query(
       'UPDATE organizations SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL',
       [id],
@@ -76,24 +104,16 @@ export class OrganizationsService {
 
     const deleted = (res.rowCount ?? 0) > 0;
 
-    if (deleted && oldOrg) {
-      await this.auditLogService.create({
-        entity_id: id,
-        entity_type: EntityType.ORGANIZATIONS,
-        field_name: 'deleted',
-        old_value: oldOrg.name,
-        new_value: 'удалено',
-      });
+    if (deleted) {
+      await this.auditLogService.logChanges(
+        id,
+        EntityType.ORGANIZATIONS,
+        { deleted: oldOrg.name },
+        { deleted: true },
+        { true: `Удалено` },
+      );
     }
 
     return deleted;
-  }
-
-  async getById(id: string): Promise<OrganizationEntity | null> {
-    const res: QueryResult<OrganizationEntity> = await this.pool.query(
-      'SELECT * FROM organizations WHERE id = $1 AND deleted_at IS NULL',
-      [id],
-    );
-    return res.rows[0] || null;
   }
 }

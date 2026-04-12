@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { PG_CONNECTION } from '../constants';
 import { Pool, QueryResult } from 'pg';
 import { DepartmentEntity } from './entities/department.entity';
@@ -46,16 +46,11 @@ export class DepartmentsService {
     );
 
     const newDept = res.rows[0];
-
     await this.auditLogService.logChanges(
       newDept.id,
       EntityType.DEPARTMENTS,
       {},
-      {
-        name: newDept.name,
-        organization_id: newDept.organization_id,
-        parent_id: newDept.parent_id,
-      } as unknown as Record<string, unknown>,
+      newDept as unknown as Record<string, unknown>,
     );
 
     return newDept;
@@ -64,36 +59,53 @@ export class DepartmentsService {
   async update(
     id: string,
     data: UpdateDepartmentDto,
-  ): Promise<DepartmentEntity | null> {
+  ): Promise<DepartmentEntity> {
     const oldDept = await this.getById(id);
-    if (!oldDept) return null;
+    if (!oldDept) {
+      throw new NotFoundException();
+    }
 
-    const { name, parent_id } = data;
-    const res: QueryResult<DepartmentEntity> = await this.pool.query(
-      `UPDATE departments 
-       SET name = COALESCE($1, name), 
-           parent_id = COALESCE($2, parent_id), 
-           updated_at = NOW() 
-       WHERE id = $3 AND deleted_at IS NULL RETURNING *`,
-      [name ?? null, parent_id ?? null, id],
+    const allowedKeys = ['name', 'parent_id'];
+    const keys = Object.keys(data).filter(
+      (key) =>
+        allowedKeys.includes(key) &&
+        data[key as keyof UpdateDepartmentDto] !== undefined,
     );
 
-    const updatedDept = res.rows[0] || null;
+    if (keys.length === 0) return oldDept;
 
-    if (updatedDept) {
-      await this.auditLogService.logChanges(
-        id,
-        EntityType.DEPARTMENTS,
-        oldDept as unknown as Record<string, unknown>,
-        updatedDept as unknown as Record<string, unknown>,
-      );
+    const setClause = keys.map((key, i) => `"${key}" = $${i + 1}`).join(', ');
+    const values = keys.map((key) => data[key as keyof UpdateDepartmentDto]);
+
+    const res = await this.pool.query<DepartmentEntity>(
+      `UPDATE departments 
+       SET ${setClause}, updated_at = NOW() 
+       WHERE id = $${keys.length + 1} AND deleted_at IS NULL 
+       RETURNING *`,
+      [...values, id],
+    );
+
+    const updatedDept = res.rows[0];
+    if (!updatedDept) {
+      throw new NotFoundException();
     }
+
+    await this.auditLogService.logChanges(
+      id,
+      EntityType.DEPARTMENTS,
+      oldDept as unknown as Record<string, unknown>,
+      updatedDept as unknown as Record<string, unknown>,
+    );
 
     return updatedDept;
   }
 
   async delete(id: string): Promise<boolean> {
     const oldDept = await this.getById(id);
+    if (!oldDept) {
+      throw new NotFoundException();
+    }
+
     const res = await this.pool.query(
       'UPDATE departments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL',
       [id],
@@ -101,14 +113,14 @@ export class DepartmentsService {
 
     const deleted = (res.rowCount ?? 0) > 0;
 
-    if (deleted && oldDept) {
-      await this.auditLogService.create({
-        entity_id: id,
-        entity_type: EntityType.DEPARTMENTS,
-        field_name: 'deleted',
-        old_value: oldDept.name,
-        new_value: 'удалено',
-      });
+    if (deleted) {
+      await this.auditLogService.logChanges(
+        id,
+        EntityType.DEPARTMENTS,
+        { deleted: oldDept.name },
+        { deleted: true },
+        { true: `Удалено` },
+      );
     }
 
     return deleted;

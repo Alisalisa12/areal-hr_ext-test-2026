@@ -14,18 +14,6 @@ export class AuditLogService {
     return res.rows;
   }
 
-  async create(data: Partial<AuditLogEntity>): Promise<AuditLogEntity> {
-    const { entity_id, entity_type, field_name, old_value, new_value } = data;
-
-    const res: QueryResult<AuditLogEntity> = await this.pool.query(
-      `INSERT INTO audit_log (entity_id, entity_type, field_name, old_value, new_value) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING *`,
-      [entity_id, entity_type, field_name, old_value, new_value],
-    );
-    return res.rows[0];
-  }
-
   private stringifyValue(
     value: unknown,
     labels?: Record<string, string>,
@@ -58,6 +46,7 @@ export class AuditLogService {
     labels?: Record<string, string>,
   ): Promise<void> {
     const skipFields = ['id', 'created_at', 'updated_at', 'deleted_at'];
+    const changes: (string | null)[] = [];
 
     for (const key in newData) {
       if (skipFields.includes(key)) continue;
@@ -66,41 +55,26 @@ export class AuditLogService {
       const newVal = this.stringifyValue(newData[key], labels);
 
       if (oldVal !== newVal) {
-        await this.create({
-          entity_id: entityId,
-          entity_type: entityType,
-          field_name: key,
-          old_value: oldVal,
-          new_value: newVal,
-        });
+        changes.push(entityId, entityType, key, oldVal, newVal);
       }
     }
-  }
 
-  async update(
-    id: string,
-    data: Partial<AuditLogEntity>,
-  ): Promise<AuditLogEntity | null> {
-    const { entity_id, entity_type, field_name, old_value, new_value } = data;
+    if (changes.length > 0) {
+      const fieldsCount = 5;
 
-    const res: QueryResult<AuditLogEntity> = await this.pool.query(
-      `UPDATE audit_log 
-       SET entity_id = COALESCE($1, entity_id), 
-           entity_type = COALESCE($2, entity_type), 
-           field_name = COALESCE($3, field_name),
-           old_value = COALESCE($4, old_value),
-           new_value = COALESCE($5, new_value)
-       WHERE id = $6 
-       RETURNING *`,
-      [entity_id, entity_type, field_name, old_value, new_value, id],
-    );
-    return res.rows[0] || null;
-  }
+      const rows = Array.from(
+        { length: changes.length / fieldsCount },
+        (_, i) => {
+          const offset = i * fieldsCount;
+          return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`;
+        },
+      );
 
-  async delete(id: string): Promise<boolean> {
-    const res = await this.pool.query('DELETE FROM audit_log WHERE id = $1', [
-      id,
-    ]);
-    return (res.rowCount ?? 0) > 0;
+      await this.pool.query(
+        `INSERT INTO audit_log (entity_id, entity_type, field_name, old_value, new_value) 
+         VALUES ${rows.join(', ')}`,
+        changes,
+      );
+    }
   }
 }
