@@ -54,7 +54,6 @@
           :grid="$q.screen.xs"
           flat
           bordered
-          title="Отделы"
           :rows="rows"
           :columns="columns"
           row-key="id"

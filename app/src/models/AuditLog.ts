@@ -11,15 +11,15 @@ export enum EntityType {
 }
 
 export const EntityTypeLabels: Record<EntityType, string> = {
-  [EntityType.ORGANIZATIONS]: 'Организации',
-  [EntityType.DEPARTMENTS]: 'Департаменты',
-  [EntityType.POSITIONS]: 'Должности',
-  [EntityType.EMPLOYEES]: 'Сотрудники',
-  [EntityType.FILES]: 'Файлы',
-  [EntityType.ADDRESSES]: 'Адреса',
-  [EntityType.PASSPORTS]: 'Паспорта',
-  [EntityType.HR_OPERATIONS]: 'HR операции',
-  [EntityType.SALARY_CHANGES]: 'Изменения зарплаты',
+  [EntityType.ORGANIZATIONS]: 'Организация',
+  [EntityType.DEPARTMENTS]: 'Отдел',
+  [EntityType.POSITIONS]: 'Должность',
+  [EntityType.EMPLOYEES]: 'Сотрудник',
+  [EntityType.FILES]: 'Файл',
+  [EntityType.ADDRESSES]: 'Адрес',
+  [EntityType.PASSPORTS]: 'Паспорт',
+  [EntityType.HR_OPERATIONS]: 'HR операция',
+  [EntityType.SALARY_CHANGES]: 'Изменение зарплаты',
 };
 
 export interface AuditLog {
