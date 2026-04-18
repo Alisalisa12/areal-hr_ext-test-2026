@@ -13,6 +13,8 @@ import { SalaryChangesModule } from './salary_changes/salary_changes.module';
 import { AuditLogModule } from './audit_log/audit_log.module';
 import { FileCategoriesModule } from './file_categories/file_categories.module';
 import { FilesModule } from './files/files.module';
+import { UsersModule } from './users/users.module';
+import { RolesModule } from './roles/roles.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { FilesModule } from './files/files.module';
     AuditLogModule,
     FileCategoriesModule,
     FilesModule,
+    UsersModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

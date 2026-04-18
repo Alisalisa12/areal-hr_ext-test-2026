@@ -9,7 +9,10 @@ export enum EntityType {
   PASSPORTS = 'passports',
   HR_OPERATIONS = 'hr_operations',
   SALARY_CHANGES = 'salary_changes',
+  USERS = 'users',
+  ROLES = 'roles',
 }
+
 export class AuditLogEntity {
   id!: string;
   entity_id!: string;
