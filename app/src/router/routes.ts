@@ -2,12 +2,12 @@ import type { RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
   {
-    path: '/dep',
+    path: '/departments',
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/DepartmentsPage.vue') }],
   },
   {
-    path: '/pos',
+    path: '/positions',
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/PositionsPage.vue') }],
   },
@@ -17,12 +17,12 @@ const routes: RouteRecordRaw[] = [
     children: [{ path: '', component: () => import('pages/OrganizationsPage.vue') }],
   },
   {
-    path: '/emp',
+    path: '/employees',
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/EmployeesPage.vue') }],
   },
   {
-    path: '/hr',
+    path: '/hr-operation',
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/HrOperations.vue') }],
   },
@@ -35,6 +35,11 @@ const routes: RouteRecordRaw[] = [
     path: '/doc',
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/FilesPage.vue') }],
+  },
+  {
+    path: '/users',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [{ path: '', component: () => import('pages/UsersPage.vue') }],
   },
 
   // Always leave this as last one,

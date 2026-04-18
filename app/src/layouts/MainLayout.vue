@@ -59,17 +59,18 @@ const navLinks = [
     title: 'Структура',
     links: [
       { title: 'Организации', icon: 'business', link: '/' },
-      { title: 'Отделы', icon: 'work_outline', link: '/dep' },
-      { title: 'Должности', icon: 'badge', link: '/pos' },
+      { title: 'Отделы', icon: 'work_outline', link: '/departments' },
+      { title: 'Должности', icon: 'badge', link: '/positions' },
     ],
   },
   {
     title: 'Управление',
     links: [
-      { title: 'Сотрудники', icon: 'group', link: '/emp' },
+      { title: 'Сотрудники', icon: 'group', link: '/employees' },
       { title: 'Файлы', icon: 'folder_open', link: '/doc' },
-      { title: 'HR операции', icon: 'swap_horiz', link: '/hr' },
+      { title: 'HR операции', icon: 'swap_horiz', link: '/hr-operation' },
       { title: 'Логи', icon: 'history', link: '/log' },
+      { title: 'Пользователи', icon: 'person', link: '/users' },
     ],
   },
 ];
