@@ -15,6 +15,7 @@ import { FileCategoriesModule } from './file_categories/file_categories.module';
 import { FilesModule } from './files/files.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
+import { MinioModule } from './minio/minio.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { RolesModule } from './roles/roles.module';
     FilesModule,
     UsersModule,
     RolesModule,
+    MinioModule,
   ],
   controllers: [AppController],
   providers: [AppService],
