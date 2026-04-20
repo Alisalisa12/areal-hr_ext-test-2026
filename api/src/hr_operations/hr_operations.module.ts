@@ -7,5 +7,6 @@ import { AuditLogModule } from '../audit_log/audit_log.module';
   imports: [DbModule, AuditLogModule],
   controllers: [HrOperationsController],
   providers: [HrOperationsService],
+  exports: [HrOperationsService],
 })
 export class HrOperationsModule {}

@@ -114,6 +114,7 @@
               label="Организация"
               dense
               outlined
+              :disable="newOp.type === HrOperationType.TRANSFER"
               :rules="[(val) => !!val || 'Обязательное поле']"
             />
 
@@ -281,7 +282,9 @@ const organizationOptions = computed(() =>
 );
 
 const departmentOptions = computed(() =>
-  departmentsStore.items.map(({ name, id }) => ({ label: name, value: id })),
+  departmentsStore.items
+  .filter((d) => d.organization_id === newOp.value.organization_id)
+  .map(({ name, id }) => ({ label: name, value: id })),
 );
 
 const positionOptions = computed(() =>
@@ -303,7 +306,10 @@ const showSalaryFields = computed(() =>
 
 watch(
   () => newOp.value.organization_id,
-  async (id) => {
+  async (id, oldId) => {
+    if (oldId && id !== oldId) {
+      newOp.value.department_id = '';
+    }
     if (id) await departmentsStore.fetchByOrganization(id);
   },
 );
@@ -387,15 +393,22 @@ async function saveOperation(): Promise<void> {
       });
     }
   } else {
-    const created = await hrStore.addHrOperation(payload);
-    if (type === HrOperationType.HIRE || type === HrOperationType.SALARY_CHANGE) {
-      await salaryStore.addSalaryChange({
-        operation_id: created.id,
-        old_salary: type === HrOperationType.HIRE ? 0 : getEmployeeCurrentSalary(empId),
-        new_salary: Number(new_salary),
-        reason,
-      });
-    }
+  const created = await hrStore.addHrOperation(payload);
+
+  if (
+    type === HrOperationType.HIRE ||
+    type === HrOperationType.SALARY_CHANGE ||
+    type === HrOperationType.TRANSFER
+  ) {
+    const currentSalary = getEmployeeCurrentSalary(empId);
+    await salaryStore.addSalaryChange({
+      operation_id: created.id,
+      old_salary: type === HrOperationType.HIRE ? 0 : currentSalary,
+      new_salary: type === HrOperationType.SALARY_CHANGE ? Number(new_salary) : currentSalary,
+      reason: reason || 'Перевод',
+    });
+  }
+
   }
 
   await Promise.all([hrStore.fetchHrOperations(), salaryStore.fetchSalaryChanges()]);

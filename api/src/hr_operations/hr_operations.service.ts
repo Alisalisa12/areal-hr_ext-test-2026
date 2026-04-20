@@ -1,4 +1,3 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { PG_CONNECTION } from '../constants';
 import { Pool, QueryResult } from 'pg';
 import {
@@ -9,6 +8,7 @@ import { AuditLogService } from '../audit_log/audit_log.service';
 import { EntityType } from '../audit_log/entities/audit_log.entity';
 import { CreateHrOperationDto } from './dto/create-hr_operation.dto';
 import { UpdateHrOperationDto } from './dto/update-hr_operation.dto';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class HrOperationsService {
@@ -16,34 +16,6 @@ export class HrOperationsService {
     @Inject(PG_CONNECTION) private readonly pool: Pool,
     private readonly auditLogService: AuditLogService,
   ) {}
-
-  private async getLabels(): Promise<Record<string, string>> {
-    const labels: Record<string, string> = {
-      hire: 'Приём на работу',
-      transfer: 'Перевод',
-      salary_change: 'Изменение зарплаты',
-      fire: 'Увольнение',
-    };
-
-    const emps = await this.pool.query<{
-      id: string;
-      last_name: string;
-      first_name: string;
-    }>('SELECT id, last_name, first_name FROM employees');
-    emps.rows.forEach((r) => (labels[r.id] = `${r.last_name} ${r.first_name}`));
-
-    const depts = await this.pool.query<{ id: string; name: string }>(
-      'SELECT id, name FROM departments',
-    );
-    depts.rows.forEach((r) => (labels[r.id] = r.name));
-
-    const pos = await this.pool.query<{ id: string; name: string }>(
-      'SELECT id, name FROM positions',
-    );
-    pos.rows.forEach((r) => (labels[r.id] = r.name));
-
-    return labels;
-  }
 
   async getAll(): Promise<FullHrOperation[]> {
     const query = `
@@ -106,21 +78,23 @@ export class HrOperationsService {
 
   async create(data: CreateHrOperationDto): Promise<HrOperationEntity> {
     const { employee_id, department_id, position_id, type } = data;
-    const res: QueryResult<HrOperationEntity> = await this.pool.query(
+
+    const res = await this.pool.query<HrOperationEntity>(
       'INSERT INTO hr_operations (employee_id, department_id, position_id, type) VALUES ($1, $2, $3, $4) RETURNING *',
       [employee_id, department_id, position_id, type],
     );
-
     const newOp = res.rows[0];
-    const labels = await this.getLabels();
 
-    await this.auditLogService.logChanges(
-      newOp.id,
-      EntityType.HR_OPERATIONS,
-      {},
-      newOp as unknown as Record<string, unknown>,
-      labels,
-    );
+    const fullOp = await this.getOneFull(newOp.id);
+    if (fullOp) {
+      await this.auditLogService.logChanges(
+        newOp.id,
+        EntityType.HR_OPERATIONS,
+        {},
+        fullOp as unknown as Record<string, unknown>,
+        {},
+      );
+    }
 
     return newOp;
   }
@@ -129,10 +103,8 @@ export class HrOperationsService {
     id: string,
     data: UpdateHrOperationDto,
   ): Promise<HrOperationEntity> {
-    const oldOp = await this.getById(id);
-    if (!oldOp) {
-      throw new NotFoundException();
-    }
+    const oldFull = await this.getOneFull(id);
+    if (!oldFull) throw new NotFoundException();
 
     const allowedKeys = ['employee_id', 'department_id', 'position_id', 'type'];
     const keys = Object.keys(data).filter(
@@ -141,41 +113,38 @@ export class HrOperationsService {
         data[key as keyof UpdateHrOperationDto] !== undefined,
     );
 
-    if (keys.length === 0) return oldOp;
+    if (keys.length > 0) {
+      const setClause = keys.map((key, i) => `"${key}" = $${i + 1}`).join(', ');
+      const values = keys.map((key) => data[key as keyof UpdateHrOperationDto]);
 
-    const setClause = keys.map((key, i) => `"${key}" = $${i + 1}`).join(', ');
-    const values = keys.map((key) => data[key as keyof UpdateHrOperationDto]);
+      const res = await this.pool.query<HrOperationEntity>(
+        `UPDATE hr_operations 
+         SET ${setClause}, updated_at = NOW() 
+         WHERE id = $${keys.length + 1} AND deleted_at IS NULL 
+         RETURNING *`,
+        [...values, id],
+      );
 
-    const res = await this.pool.query<HrOperationEntity>(
-      `UPDATE hr_operations 
-       SET ${setClause}, updated_at = NOW() 
-       WHERE id = $${keys.length + 1} AND deleted_at IS NULL 
-       RETURNING *`,
-      [...values, id],
-    );
-
-    const updatedOp = res.rows[0];
-    if (!updatedOp) {
-      throw new NotFoundException();
+      if (!res.rows[0]) throw new NotFoundException();
     }
 
-    const labels = await this.getLabels();
+    const newFull = await this.getOneFull(id);
+    if (!newFull) throw new NotFoundException();
+
     await this.auditLogService.logChanges(
       id,
       EntityType.HR_OPERATIONS,
-      oldOp as unknown as Record<string, unknown>,
-      updatedOp as unknown as Record<string, unknown>,
-      labels,
+      oldFull as unknown as Record<string, unknown>,
+      newFull as unknown as Record<string, unknown>,
+      {},
     );
 
-    return updatedOp;
+    return newFull;
   }
 
   async delete(id: string): Promise<boolean> {
-    const oldOp = await this.getById(id);
-    if (!oldOp) {
-      throw new NotFoundException();
-    }
+    const oldFull = await this.getOneFull(id);
+    if (!oldFull) throw new NotFoundException();
 
     const res = await this.pool.query(
       'UPDATE hr_operations SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL',
@@ -185,15 +154,12 @@ export class HrOperationsService {
     const deleted = (res.rowCount ?? 0) > 0;
 
     if (deleted) {
-      const labels = await this.getLabels();
       await this.auditLogService.logChanges(
         id,
         EntityType.HR_OPERATIONS,
-        {
-          deleted: `${labels[oldOp.type] ?? oldOp.type} | ${labels[oldOp.employee_id] ?? oldOp.employee_id}`,
-        },
+        oldFull as unknown as Record<string, unknown>,
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
       );
     }
 
