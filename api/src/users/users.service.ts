@@ -22,6 +22,14 @@ export class UsersService {
     } as UserWithDetails;
   }
 
+  private sanitizeUserData(
+    user: UserWithDetails | UserEntity,
+  ): Record<string, unknown> {
+    if (!user) return {};
+    const { password_hash, ...sanitizedUser } = user;
+    return sanitizedUser;
+  }
+
   async getAll(): Promise<UserWithDetails[]> {
     const res = await this.pool.query(`
       SELECT 
@@ -78,7 +86,7 @@ export class UsersService {
       newUser.id,
       EntityType.USERS,
       {},
-      newUser as unknown as Record<string, unknown>,
+      this.sanitizeUserData(newUser),
       {},
       userId,
     );
@@ -132,8 +140,8 @@ export class UsersService {
     await this.auditLogService.logChanges(
       id,
       EntityType.USERS,
-      oldUser as unknown as Record<string, unknown>,
-      updatedUser as unknown as Record<string, unknown>,
+      this.sanitizeUserData(oldUser as unknown as UserEntity),
+      this.sanitizeUserData(updatedUser),
       {},
       userId,
     );
