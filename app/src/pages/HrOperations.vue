@@ -404,7 +404,7 @@ async function saveOperation(): Promise<void> {
     await salaryStore.addSalaryChange({
       operation_id: created.id,
       old_salary: type === HrOperationType.HIRE ? 0 : currentSalary,
-      new_salary: type === HrOperationType.SALARY_CHANGE ? Number(new_salary) : currentSalary,
+      new_salary: (type === HrOperationType.HIRE || type === HrOperationType.SALARY_CHANGE) ? Number(new_salary) : currentSalary,
       reason: reason || 'Перевод',
     });
   }
