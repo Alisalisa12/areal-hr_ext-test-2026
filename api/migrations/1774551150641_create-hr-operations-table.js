@@ -40,6 +40,12 @@ export const up = (pgm) => {
       references: '"positions"',
       onDelete: 'RESTRICT',
     },
+    created_by: {
+      type: 'uuid',
+      notNull: true,
+      references: '"users"',
+      onDelete: 'RESTRICT',
+    },
     type: {
       type: 'hr_operation_type_enum',
       notNull: true,
@@ -60,6 +66,7 @@ export const up = (pgm) => {
   pgm.createIndex('hr_operations', 'employee_id');
   pgm.createIndex('hr_operations', 'department_id');
   pgm.createIndex('hr_operations', 'position_id');
+  pgm.createIndex('hr_operations', 'created_by');
   pgm.createIndex('hr_operations', 'type');
   pgm.createIndex('hr_operations', 'deleted_at');
 
@@ -81,6 +88,7 @@ export const down = (pgm) => {
     'DROP TRIGGER IF EXISTS update_hr_operations_updated_at ON hr_operations;',
   );
   pgm.dropIndex('hr_operations', 'type');
+  pgm.dropIndex('hr_operations', 'created_by');
   pgm.dropIndex('hr_operations', 'position_id');
   pgm.dropIndex('hr_operations', 'department_id');
   pgm.dropIndex('hr_operations', 'employee_id');

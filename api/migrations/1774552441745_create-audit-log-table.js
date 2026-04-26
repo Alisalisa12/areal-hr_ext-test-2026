@@ -29,6 +29,12 @@ export const up = (pgm) => {
       primaryKey: true,
       default: pgm.func('gen_random_uuid()'),
     },
+    user_id: {
+      type: 'uuid',
+      notNull: true,
+      references: '"users"',
+      onDelete: 'RESTRICT',
+    },
     entity_id: {
       type: 'uuid',
       notNull: true,
@@ -53,6 +59,7 @@ export const up = (pgm) => {
       default: pgm.func('current_timestamp'),
     },
   });
+  pgm.createIndex('audit_log', 'user_id');
   pgm.createIndex('audit_log', ['entity_id', 'entity_type']);
 };
 
