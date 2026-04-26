@@ -15,7 +15,7 @@ declare module 'vue' {
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = axios.create({ baseURL: '/api' });
+const api = axios.create({ baseURL: '/api', withCredentials: true });
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ message?: string }>) => {
@@ -24,7 +24,7 @@ api.interceptors.response.use(
     if (error.response) {
       const status = error.response.status;
       if (status === 401) {
-        message = 'Сессия истекла. Пожалуйста, войдите снова.';
+        message = 'Требуется авторизация.';
       } else if (status === 403) {
         message = 'У вас нет прав для этого действия (403).';
       } else if (status === 404) {

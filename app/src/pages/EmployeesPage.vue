@@ -304,9 +304,9 @@ const optionsOrgs = computed<string[]>(() => {
 
 async function saveEmployee() {
   if (isEdit.value && editId.value) {
-    await employeesStore.editEmployee(editId.value, newEmployee.value);
+    await employeesStore.editEmployee(editId.value, { ...newEmployee.value });
   } else {
-    await employeesStore.addEmployee(newEmployee.value);
+    await employeesStore.addEmployee({ ...newEmployee.value });
   }
   resetForm();
 }

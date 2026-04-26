@@ -10,6 +10,15 @@ export interface User {
   employee_fio?: string;
 }
 
+export interface AuthUser {
+  id: string;
+  login: string;
+  role_id: string;
+  employee_id: string;
+  role_name: string | null;
+  employee_fio: string;
+}
+
 export interface CreateUserDto {
   role_id: string;
   employee_id: string;
