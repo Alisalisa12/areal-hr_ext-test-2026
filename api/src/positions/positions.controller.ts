@@ -13,8 +13,9 @@ import { PositionsService } from './positions.service';
 import { CreatePositionDto } from './dto/create-position.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
 import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
-@Controller('/positions')
+@Controller('positions')
 export class PositionsController {
   constructor(private readonly positionsService: PositionsService) {}
 
@@ -24,9 +25,12 @@ export class PositionsController {
   }
 
   @Post()
-  @UsePipes(new JoiValidationPipe(createPositionSchema))
-  async create(@Body() createDto: CreatePositionDto) {
-    return this.positionsService.create(createDto);
+  async create(
+    @Body(new JoiValidationPipe(createPositionSchema))
+    createDto: CreatePositionDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.positionsService.create(createDto, userId);
   }
 
   @Patch(':id')
@@ -34,12 +38,13 @@ export class PositionsController {
     @Param('id') id: string,
     @Body(new JoiValidationPipe(updatePositionSchema))
     updateDto: UpdatePositionDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.positionsService.update(id, updateDto);
+    return this.positionsService.update(id, updateDto, userId);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.positionsService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.positionsService.delete(id, userId);
   }
 }

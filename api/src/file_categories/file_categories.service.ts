@@ -29,7 +29,10 @@ export class FileCategoriesService {
     return res.rows[0] || null;
   }
 
-  async create(data: CreateFileCategoryDto): Promise<FileCategoryEntity> {
+  async create(
+    data: CreateFileCategoryDto,
+    userId: string,
+  ): Promise<FileCategoryEntity> {
     const { name, comment } = data;
 
     const res: QueryResult<FileCategoryEntity> = await this.pool.query(
@@ -46,6 +49,8 @@ export class FileCategoriesService {
       EntityType.FILE_CATEGORIES,
       {},
       newCategory as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return newCategory;
@@ -54,6 +59,7 @@ export class FileCategoriesService {
   async update(
     id: string,
     data: UpdateFileCategoryDto,
+    userId: string,
   ): Promise<FileCategoryEntity> {
     const oldCategory = await this.getById(id);
     if (!oldCategory) {
@@ -90,12 +96,14 @@ export class FileCategoriesService {
       EntityType.FILE_CATEGORIES,
       oldCategory as unknown as Record<string, unknown>,
       updatedCategory as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return updatedCategory;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldCategory = await this.getById(id);
     if (!oldCategory) {
       throw new NotFoundException();
@@ -114,7 +122,8 @@ export class FileCategoriesService {
         EntityType.FILE_CATEGORIES,
         { deleted: oldCategory.name },
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
+        userId,
       );
     }
 

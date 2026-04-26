@@ -6,9 +6,8 @@ import {
   Param,
   Patch,
   Post,
-  UsePipes,
 } from '@nestjs/common';
-import { JoiValidationPipe } from 'src/shared/pipes/joi-validation.pipe';
+import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
 import { CreateSalaryChangeDto } from './dto/create-salary_change.dto';
 import { UpdateSalaryChangeDto } from './dto/update-salary_change.dto';
 import {
@@ -16,8 +15,9 @@ import {
   updateSalaryChangeSchema,
 } from './salary_changes.schema';
 import { SalaryChangesService } from './salary_changes.service';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
-@Controller('/salary-changes')
+@Controller('salary-changes')
 export class SalaryChangesController {
   constructor(private readonly salaryChangesService: SalaryChangesService) {}
 
@@ -27,9 +27,12 @@ export class SalaryChangesController {
   }
 
   @Post()
-  @UsePipes(new JoiValidationPipe(createSalaryChangeSchema))
-  async create(@Body() createDto: CreateSalaryChangeDto) {
-    return this.salaryChangesService.create(createDto);
+  async create(
+    @Body(new JoiValidationPipe(createSalaryChangeSchema))
+    createDto: CreateSalaryChangeDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.salaryChangesService.create(createDto, userId);
   }
 
   @Patch(':id')
@@ -37,12 +40,13 @@ export class SalaryChangesController {
     @Param('id') id: string,
     @Body(new JoiValidationPipe(updateSalaryChangeSchema))
     updateDto: UpdateSalaryChangeDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.salaryChangesService.update(id, updateDto);
+    return this.salaryChangesService.update(id, updateDto, userId);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.salaryChangesService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.salaryChangesService.delete(id, userId);
   }
 }

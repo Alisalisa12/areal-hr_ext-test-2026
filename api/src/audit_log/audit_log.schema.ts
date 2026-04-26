@@ -4,6 +4,7 @@ import { EntityType } from './entities/audit_log.entity';
 const uuidSchema = Joi.string().guid({ version: 'uuidv4' });
 
 export const createAuditLogSchema = Joi.object({
+  user_id: uuidSchema.allow(null).optional(),
   entity_id: uuidSchema.required(),
   entity_type: Joi.string()
     .valid(...Object.values(EntityType))

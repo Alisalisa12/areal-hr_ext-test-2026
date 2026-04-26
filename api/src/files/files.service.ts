@@ -22,6 +22,7 @@ export class FilesService {
     employeeId: string,
     categoryId: string,
     file: Express.Multer.File,
+    userId: string,
   ): Promise<FileEntity> {
     const filename = `${randomUUID().toString()}-${file.originalname}`;
     const storagePath = `${employeeId}/${filename}`;
@@ -48,6 +49,8 @@ export class FilesService {
       EntityType.FILES,
       {},
       newFile as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return newFile;
@@ -97,7 +100,7 @@ export class FilesService {
     return res.rows;
   }
 
-  async deleteFile(id: string): Promise<void> {
+  async deleteFile(id: string, userId: string): Promise<void> {
     const oldFile = await this.getById(id);
     if (!oldFile) {
       throw new NotFoundException();
@@ -115,7 +118,8 @@ export class FilesService {
         EntityType.FILES,
         { deleted: oldFile.name },
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
+        userId,
       );
     }
   }

@@ -16,4 +16,7 @@ export class UserEntity {
 export interface UserWithDetails extends UserEntity {
   role_name: string | null;
   employee_fio: string;
+  role: {
+    name: string;
+  };
 }

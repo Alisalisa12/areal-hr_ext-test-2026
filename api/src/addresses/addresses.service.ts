@@ -37,7 +37,7 @@ export class AddressesService {
     return res.rows[0] || null;
   }
 
-  async create(data: CreateAddressDto): Promise<AddressEntity> {
+  async create(data: CreateAddressDto, userId: string): Promise<AddressEntity> {
     const { employee_id, region, city, street, house, block, flat } = data;
     const res: QueryResult<AddressEntity> = await this.pool.query(
       `INSERT INTO addresses (employee_id, region, city, street, house, block, flat) 
@@ -51,16 +51,20 @@ export class AddressesService {
       EntityType.ADDRESSES,
       {},
       newAddress as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return newAddress;
   }
 
-  async update(id: string, data: UpdateAddressDto): Promise<AddressEntity> {
+  async update(
+    id: string,
+    data: UpdateAddressDto,
+    userId: string,
+  ): Promise<AddressEntity> {
     const oldAddress = await this.getById(id);
-    if (!oldAddress) {
-      throw new NotFoundException();
-    }
+    if (!oldAddress) throw new NotFoundException();
 
     const allowedKeys = ['region', 'city', 'street', 'house', 'block', 'flat'];
     const keys = Object.keys(data).filter(
@@ -83,25 +87,23 @@ export class AddressesService {
     );
 
     const updatedAddress = res.rows[0];
-    if (!updatedAddress) {
-      throw new NotFoundException();
-    }
+    if (!updatedAddress) throw new NotFoundException();
 
     await this.auditLogService.logChanges(
       id,
       EntityType.ADDRESSES,
       oldAddress as unknown as Record<string, unknown>,
       updatedAddress as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return updatedAddress;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldAddress = await this.getById(id);
-    if (!oldAddress) {
-      throw new NotFoundException();
-    }
+    if (!oldAddress) throw new NotFoundException();
 
     const res = await this.pool.query(
       'UPDATE addresses SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL',
@@ -118,7 +120,8 @@ export class AddressesService {
           deleted: `${oldAddress.city}, ${oldAddress.street} ${oldAddress.house}`,
         },
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
+        userId,
       );
     }
 

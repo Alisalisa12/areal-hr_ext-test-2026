@@ -77,11 +77,11 @@ export class HrOperationsService {
   }
 
   async create(data: CreateHrOperationDto): Promise<HrOperationEntity> {
-    const { employee_id, department_id, position_id, type } = data;
+    const { employee_id, department_id, position_id, type, created_by } = data;
 
     const res = await this.pool.query<HrOperationEntity>(
-      'INSERT INTO hr_operations (employee_id, department_id, position_id, type) VALUES ($1, $2, $3, $4) RETURNING *',
-      [employee_id, department_id, position_id, type],
+      'INSERT INTO hr_operations (employee_id, department_id, position_id, type, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [employee_id, department_id, position_id, type, created_by],
     );
     const newOp = res.rows[0];
 
@@ -93,6 +93,7 @@ export class HrOperationsService {
         {},
         fullOp as unknown as Record<string, unknown>,
         {},
+        created_by,
       );
     }
 
@@ -102,6 +103,7 @@ export class HrOperationsService {
   async update(
     id: string,
     data: UpdateHrOperationDto,
+    userId: string,
   ): Promise<HrOperationEntity> {
     const oldFull = await this.getOneFull(id);
     if (!oldFull) throw new NotFoundException();
@@ -137,12 +139,13 @@ export class HrOperationsService {
       oldFull as unknown as Record<string, unknown>,
       newFull as unknown as Record<string, unknown>,
       {},
+      userId,
     );
 
     return newFull;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldFull = await this.getOneFull(id);
     if (!oldFull) throw new NotFoundException();
 
@@ -160,6 +163,7 @@ export class HrOperationsService {
         oldFull as unknown as Record<string, unknown>,
         { deleted: true },
         { true: 'Удалено' },
+        userId,
       );
     }
 

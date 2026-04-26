@@ -6,15 +6,17 @@ import {
   Delete,
   Param,
   Body,
-  UsePipes,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { createRoleSchema, updateRoleSchema } from './roles.schema';
 import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
-@Controller('/roles')
+@Controller('roles')
+@Roles('admin')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
@@ -24,21 +26,25 @@ export class RolesController {
   }
 
   @Post()
-  @UsePipes(new JoiValidationPipe(createRoleSchema))
-  async create(@Body() createDto: CreateRoleDto) {
-    return this.rolesService.create(createDto);
+  async create(
+    @Body(new JoiValidationPipe(createRoleSchema))
+    createDto: CreateRoleDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.rolesService.create(createDto, userId);
   }
 
   @Patch(':id')
   async update(
     @Param('id') id: string,
     @Body(new JoiValidationPipe(updateRoleSchema)) updateDto: UpdateRoleDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.rolesService.update(id, updateDto);
+    return this.rolesService.update(id, updateDto, userId);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.rolesService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.rolesService.delete(id, userId);
   }
 }

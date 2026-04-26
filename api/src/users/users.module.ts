@@ -8,5 +8,6 @@ import { AuditLogModule } from '../audit_log/audit_log.module';
   imports: [DbModule, AuditLogModule],
   controllers: [UsersController],
   providers: [UsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}

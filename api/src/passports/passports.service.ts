@@ -37,7 +37,10 @@ export class PassportsService {
     return res.rows[0] || null;
   }
 
-  async create(data: CreatePassportDto): Promise<PassportEntity> {
+  async create(
+    data: CreatePassportDto,
+    userId: string,
+  ): Promise<PassportEntity> {
     const { employee_id, series, number, issue_date, issuer_code, issued_by } =
       data;
     const res: QueryResult<PassportEntity> = await this.pool.query(
@@ -53,12 +56,18 @@ export class PassportsService {
       EntityType.PASSPORTS,
       {},
       newPassport as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return newPassport;
   }
 
-  async update(id: string, data: UpdatePassportDto): Promise<PassportEntity> {
+  async update(
+    id: string,
+    data: UpdatePassportDto,
+    userId: string,
+  ): Promise<PassportEntity> {
     const oldPassport = await this.getById(id);
     if (!oldPassport) {
       throw new NotFoundException();
@@ -100,12 +109,14 @@ export class PassportsService {
       EntityType.PASSPORTS,
       oldPassport as unknown as Record<string, unknown>,
       updatedPassport as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return updatedPassport;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldPassport = await this.getById(id);
     if (!oldPassport) {
       throw new NotFoundException();
@@ -124,7 +135,8 @@ export class PassportsService {
         EntityType.PASSPORTS,
         { deleted: `${oldPassport.series} ${oldPassport.number}` },
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
+        userId,
       );
     }
 

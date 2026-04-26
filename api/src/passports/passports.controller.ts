@@ -13,8 +13,9 @@ import { PassportsService } from './passports.service';
 import { CreatePassportDto } from './dto/create-passport.dto';
 import { UpdatePassportDto } from './dto/update-passport.dto';
 import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
-@Controller('/passports')
+@Controller('passports')
 export class PassportsController {
   constructor(private readonly passportsService: PassportsService) {}
 
@@ -29,9 +30,12 @@ export class PassportsController {
   }
 
   @Post()
-  @UsePipes(new JoiValidationPipe(createPassportSchema))
-  async create(@Body() createDto: CreatePassportDto) {
-    return this.passportsService.create(createDto);
+  async create(
+    @Body(new JoiValidationPipe(createPassportSchema))
+    createDto: CreatePassportDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.passportsService.create(createDto, userId);
   }
 
   @Patch(':id')
@@ -39,12 +43,13 @@ export class PassportsController {
     @Param('id') id: string,
     @Body(new JoiValidationPipe(updatePassportSchema))
     updateDto: UpdatePassportDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.passportsService.update(id, updateDto);
+    return this.passportsService.update(id, updateDto, userId);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.passportsService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.passportsService.delete(id, userId);
   }
 }

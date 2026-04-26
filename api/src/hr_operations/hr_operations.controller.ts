@@ -6,7 +6,6 @@ import {
   Delete,
   Param,
   Body,
-  UsePipes,
 } from '@nestjs/common';
 import {
   createHrOperationSchema,
@@ -16,8 +15,9 @@ import { HrOperationsService } from './hr_operations.service';
 import { CreateHrOperationDto } from './dto/create-hr_operation.dto';
 import { UpdateHrOperationDto } from './dto/update-hr_operation.dto';
 import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
-@Controller('/hr-operations')
+@Controller('hr-operations')
 export class HrOperationsController {
   constructor(private readonly hrOperationsService: HrOperationsService) {}
 
@@ -27,9 +27,15 @@ export class HrOperationsController {
   }
 
   @Post()
-  @UsePipes(new JoiValidationPipe(createHrOperationSchema))
-  async create(@Body() createDto: CreateHrOperationDto) {
-    return this.hrOperationsService.create(createDto);
+  async create(
+    @Body(new JoiValidationPipe(createHrOperationSchema))
+    createDto: CreateHrOperationDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.hrOperationsService.create({
+      ...createDto,
+      created_by: userId,
+    });
   }
 
   @Patch(':id')
@@ -37,12 +43,13 @@ export class HrOperationsController {
     @Param('id') id: string,
     @Body(new JoiValidationPipe(updateHrOperationSchema))
     updateDto: UpdateHrOperationDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.hrOperationsService.update(id, updateDto);
+    return this.hrOperationsService.update(id, updateDto, userId);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.hrOperationsService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.hrOperationsService.delete(id, userId);
   }
 }

@@ -4,5 +4,6 @@ export class CreateHrOperationDto {
   employee_id!: string;
   department_id!: string;
   position_id!: string;
+  created_by!: string;
   type!: HrOperationType;
 }

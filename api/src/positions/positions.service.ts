@@ -29,7 +29,10 @@ export class PositionsService {
     return res.rows[0] || null;
   }
 
-  async create(data: CreatePositionDto): Promise<PositionEntity> {
+  async create(
+    data: CreatePositionDto,
+    userId: string,
+  ): Promise<PositionEntity> {
     const { name, comment } = data;
     const res: QueryResult<PositionEntity> = await this.pool.query(
       'INSERT INTO positions (name, comment) VALUES ($1, $2) RETURNING *',
@@ -42,12 +45,18 @@ export class PositionsService {
       EntityType.POSITIONS,
       {},
       newPos as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return newPos;
   }
 
-  async update(id: string, data: UpdatePositionDto): Promise<PositionEntity> {
+  async update(
+    id: string,
+    data: UpdatePositionDto,
+    userId: string,
+  ): Promise<PositionEntity> {
     const oldPos = await this.getById(id);
     if (!oldPos) {
       throw new NotFoundException();
@@ -83,12 +92,14 @@ export class PositionsService {
       EntityType.POSITIONS,
       oldPos as unknown as Record<string, unknown>,
       updatedPos as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return updatedPos;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldPos = await this.getById(id);
     if (!oldPos) {
       throw new NotFoundException();
@@ -107,7 +118,8 @@ export class PositionsService {
         EntityType.POSITIONS,
         { deleted: oldPos.name },
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
+        userId,
       );
     }
 

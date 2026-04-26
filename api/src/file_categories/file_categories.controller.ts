@@ -6,9 +6,7 @@ import {
   Delete,
   Param,
   Body,
-  UsePipes,
 } from '@nestjs/common';
-
 import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
 import { CreateFileCategoryDto } from './dto/create-file_category.dto';
 import { UpdateFileCategoryDto } from './dto/update-file_category.dto';
@@ -17,8 +15,9 @@ import {
   createFileCategorySchema,
   updateFileCategorySchema,
 } from './file_categories.schema';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
-@Controller('/file-categories')
+@Controller('file-categories')
 export class FileCategoriesController {
   constructor(private readonly fileCategoriesService: FileCategoriesService) {}
 
@@ -33,9 +32,12 @@ export class FileCategoriesController {
   }
 
   @Post()
-  @UsePipes(new JoiValidationPipe(createFileCategorySchema))
-  async create(@Body() createDto: CreateFileCategoryDto) {
-    return this.fileCategoriesService.create(createDto);
+  async create(
+    @Body(new JoiValidationPipe(createFileCategorySchema))
+    createDto: CreateFileCategoryDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.fileCategoriesService.create(createDto, userId);
   }
 
   @Patch(':id')
@@ -43,12 +45,13 @@ export class FileCategoriesController {
     @Param('id') id: string,
     @Body(new JoiValidationPipe(updateFileCategorySchema))
     updateDto: UpdateFileCategoryDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.fileCategoriesService.update(id, updateDto);
+    return this.fileCategoriesService.update(id, updateDto, userId);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.fileCategoriesService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.fileCategoriesService.delete(id, userId);
   }
 }

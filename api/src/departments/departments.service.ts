@@ -37,7 +37,10 @@ export class DepartmentsService {
     return res.rows[0] || null;
   }
 
-  async create(data: CreateDepartmentDto): Promise<DepartmentEntity> {
+  async create(
+    data: CreateDepartmentDto,
+    userId: string,
+  ): Promise<DepartmentEntity> {
     const { name, organization_id, parent_id } = data;
     const res: QueryResult<DepartmentEntity> = await this.pool.query(
       `INSERT INTO departments (name, organization_id, parent_id) 
@@ -51,6 +54,8 @@ export class DepartmentsService {
       EntityType.DEPARTMENTS,
       {},
       newDept as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return newDept;
@@ -59,6 +64,7 @@ export class DepartmentsService {
   async update(
     id: string,
     data: UpdateDepartmentDto,
+    userId: string,
   ): Promise<DepartmentEntity> {
     const oldDept = await this.getById(id);
     if (!oldDept) {
@@ -95,12 +101,14 @@ export class DepartmentsService {
       EntityType.DEPARTMENTS,
       oldDept as unknown as Record<string, unknown>,
       updatedDept as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return updatedDept;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldDept = await this.getById(id);
     if (!oldDept) {
       throw new NotFoundException();
@@ -119,7 +127,8 @@ export class DepartmentsService {
         EntityType.DEPARTMENTS,
         { deleted: oldDept.name },
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
+        userId,
       );
     }
 

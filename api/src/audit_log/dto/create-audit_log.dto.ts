@@ -1,6 +1,7 @@
 import { EntityType } from '../entities/audit_log.entity';
 
 export class CreateAuditLogDto {
+  user_id!: string | null;
   entity_id!: string;
   entity_type!: EntityType;
   field_name!: string;

@@ -9,7 +9,6 @@ import {
   Redirect,
   UploadedFile,
 } from '@nestjs/common';
-
 import { FileEntity } from './entities/file.entity';
 import { FilesService } from './files.service';
 import { CustomFilesValidationPipe } from 'src/shared/pipes/custom-files-validation.pipe';
@@ -17,6 +16,7 @@ import { JoiValidationPipe } from 'src/shared/pipes/joi-validation.pipe';
 import { createFileSchema } from './files.schema';
 import { CreateFileDto } from './dto/create-file.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @Controller('files')
 export class FilesController {
@@ -52,14 +52,22 @@ export class FilesController {
   @UseInterceptors(FileInterceptor('file'))
   async upload(
     @Body(new JoiValidationPipe(createFileSchema)) body: CreateFileDto,
-    @UploadedFile(new CustomFilesValidationPipe())
-    file: Express.Multer.File,
+    @UploadedFile(new CustomFilesValidationPipe()) file: Express.Multer.File,
+    @CurrentUser('id') userId: string,
   ): Promise<FileEntity> {
-    return this.service.upload(body.employee_id, body.category_id, file);
+    return this.service.upload(
+      body.employee_id,
+      body.category_id,
+      file,
+      userId,
+    );
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string): Promise<void> {
-    await this.service.deleteFile(id);
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ): Promise<void> {
+    await this.service.deleteFile(id, userId);
   }
 }

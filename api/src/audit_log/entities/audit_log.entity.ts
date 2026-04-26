@@ -15,6 +15,7 @@ export enum EntityType {
 
 export class AuditLogEntity {
   id!: string;
+  user_id!: string | null;
   entity_id!: string;
   entity_type!: EntityType;
   field_name!: string;

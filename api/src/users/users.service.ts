@@ -1,13 +1,11 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { PG_CONNECTION } from '../constants';
 import { Pool, QueryResult } from 'pg';
-
 import { AuditLogService } from '../audit_log/audit_log.service';
 import { EntityType } from '../audit_log/entities/audit_log.entity';
-
 import * as argon2 from 'argon2';
-import { CreateUserDto } from './dto/create-position.dto';
-import { UpdateUserDto } from './dto/update-position.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UserWithDetails, UserEntity } from './entities/user.entity';
 
 @Injectable()
@@ -17,8 +15,15 @@ export class UsersService {
     private readonly auditLogService: AuditLogService,
   ) {}
 
+  private mapUser(row: Record<string, any>): UserWithDetails {
+    return {
+      ...row,
+      role: { name: String(row.role_name || '') },
+    } as UserWithDetails;
+  }
+
   async getAll(): Promise<UserWithDetails[]> {
-    const res: QueryResult<UserWithDetails> = await this.pool.query(`
+    const res = await this.pool.query(`
       SELECT 
         u.*, 
         r.name as role_name,
@@ -29,18 +34,36 @@ export class UsersService {
       WHERE u.deleted_at IS NULL 
       ORDER BY u.created_at DESC
     `);
-    return res.rows;
+    return res.rows.map((row: Record<string, any>) => this.mapUser(row));
   }
 
-  async getById(id: string): Promise<UserEntity | null> {
-    const res: QueryResult<UserEntity> = await this.pool.query(
-      'SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL',
+  async getById(id: string): Promise<UserWithDetails | null> {
+    const res = await this.pool.query(
+      `SELECT u.*, r.name as role_name 
+      FROM users u
+      LEFT JOIN roles r ON u.role_id = r.id
+      WHERE u.id = $1 AND u.deleted_at IS NULL`,
       [id],
     );
-    return res.rows[0];
+    return res.rows[0] ? this.mapUser(res.rows[0]) : null;
   }
 
-  async create(data: CreateUserDto): Promise<UserEntity> {
+  async findByLogin(login: string): Promise<UserWithDetails | undefined> {
+    const res = await this.pool.query(
+      `SELECT 
+          u.*, 
+          r.name as role_name,
+          TRIM(CONCAT(e.last_name, ' ', e.first_name, ' ', e.middle_name)) as employee_fio
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN employees e ON u.employee_id = e.id
+        WHERE u.login = $1 AND u.deleted_at IS NULL`,
+      [login],
+    );
+    return res.rows[0] ? this.mapUser(res.rows[0]) : undefined;
+  }
+
+  async create(data: CreateUserDto, userId: string): Promise<UserEntity> {
     const { role_id, employee_id, login, password } = data;
     const hash = await argon2.hash(password);
     const res: QueryResult<UserEntity> = await this.pool.query(
@@ -56,12 +79,18 @@ export class UsersService {
       EntityType.USERS,
       {},
       newUser as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return newUser;
   }
 
-  async update(id: string, data: UpdateUserDto): Promise<UserEntity> {
+  async update(
+    id: string,
+    data: UpdateUserDto,
+    userId: string,
+  ): Promise<UserEntity> {
     const oldUser = await this.getById(id);
     if (!oldUser) {
       throw new NotFoundException('');
@@ -105,12 +134,14 @@ export class UsersService {
       EntityType.USERS,
       oldUser as unknown as Record<string, unknown>,
       updatedUser as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return updatedUser;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldUser = await this.getById(id);
     if (!oldUser) {
       throw new NotFoundException('');
@@ -129,7 +160,8 @@ export class UsersService {
         EntityType.USERS,
         { deleted: oldUser.login },
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
+        userId,
       );
     }
 

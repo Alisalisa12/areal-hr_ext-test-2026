@@ -48,7 +48,10 @@ export class EmployeesService {
     return res.rows[0];
   }
 
-  async create(data: Partial<CreateEmployeeDto>): Promise<EmployeeEntity> {
+  async create(
+    data: Partial<CreateEmployeeDto>,
+    userId: string,
+  ): Promise<EmployeeEntity> {
     const { last_name, first_name, middle_name, birth_date } = data;
 
     const res: QueryResult<EmployeeEntity> = await this.pool.query(
@@ -65,12 +68,18 @@ export class EmployeesService {
       EntityType.EMPLOYEES,
       {},
       newEmp as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return newEmp;
   }
 
-  async update(id: string, data: UpdateEmployeeDto): Promise<EmployeeEntity> {
+  async update(
+    id: string,
+    data: UpdateEmployeeDto,
+    userId: string,
+  ): Promise<EmployeeEntity> {
     const oldEmp = await this.getById(id);
     if (!oldEmp) {
       throw new NotFoundException();
@@ -108,19 +117,19 @@ export class EmployeesService {
       throw new NotFoundException();
     }
 
-    if (updatedEmp) {
-      await this.auditLogService.logChanges(
-        id,
-        EntityType.EMPLOYEES,
-        oldEmp as unknown as Record<string, unknown>,
-        updatedEmp as unknown as Record<string, unknown>,
-      );
-    }
+    await this.auditLogService.logChanges(
+      id,
+      EntityType.EMPLOYEES,
+      oldEmp as unknown as Record<string, unknown>,
+      updatedEmp as unknown as Record<string, unknown>,
+      {},
+      userId,
+    );
 
     return updatedEmp;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldEmp = await this.getById(id);
 
     const res = await this.pool.query(
@@ -142,9 +151,8 @@ export class EmployeesService {
           deleted: `${oldEmp.last_name} ${oldEmp.first_name} ${oldEmp.middle_name ?? ''}`,
         },
         { deleted: true },
-        {
-          true: `Уволен`,
-        },
+        { true: 'Уволен' },
+        userId,
       );
     }
     return deleted;

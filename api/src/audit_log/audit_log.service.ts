@@ -44,6 +44,7 @@ export class AuditLogService {
     oldData: Record<string, unknown>,
     newData: Record<string, unknown>,
     labels?: Record<string, string>,
+    userId?: string,
   ): Promise<void> {
     const skipFields = ['id', 'created_at', 'updated_at', 'deleted_at'];
     const changes: (string | null)[] = [];
@@ -55,23 +56,22 @@ export class AuditLogService {
       const newVal = this.stringifyValue(newData[key], labels);
 
       if (oldVal !== newVal) {
-        changes.push(entityId, entityType, key, oldVal, newVal);
+        changes.push(entityId, entityType, key, oldVal, newVal, userId ?? null);
       }
     }
 
     if (changes.length > 0) {
-      const fieldsCount = 5;
-
+      const fieldsCount = 6;
       const rows = Array.from(
         { length: changes.length / fieldsCount },
         (_, i) => {
           const offset = i * fieldsCount;
-          return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`;
+          return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6})`;
         },
       );
 
       await this.pool.query(
-        `INSERT INTO audit_log (entity_id, entity_type, field_name, old_value, new_value) 
+        `INSERT INTO audit_log (entity_id, entity_type, field_name, old_value, new_value, user_id) 
          VALUES ${rows.join(', ')}`,
         changes,
       );

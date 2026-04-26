@@ -29,7 +29,10 @@ export class SalaryChangesService {
     return res.rows[0] || null;
   }
 
-  async create(data: CreateSalaryChangeDto): Promise<SalaryChangeEntity> {
+  async create(
+    data: CreateSalaryChangeDto,
+    userId: string,
+  ): Promise<SalaryChangeEntity> {
     const { operation_id, old_salary, new_salary, reason, changed_at } = data;
     const res: QueryResult<SalaryChangeEntity> = await this.pool.query(
       `INSERT INTO salary_changes (operation_id, old_salary, new_salary, reason, changed_at) 
@@ -45,6 +48,8 @@ export class SalaryChangesService {
       EntityType.SALARY_CHANGES,
       {},
       created as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return created;
@@ -53,6 +58,7 @@ export class SalaryChangesService {
   async update(
     id: string,
     data: UpdateSalaryChangeDto,
+    userId: string,
   ): Promise<SalaryChangeEntity> {
     const oldRecord = await this.getById(id);
     if (!oldRecord) {
@@ -90,7 +96,7 @@ export class SalaryChangesService {
 
     const updated = res.rows[0];
     if (!updated) {
-      throw new NotFoundException(`Не удалось обновить запись`);
+      throw new NotFoundException('Не удалось обновить запись');
     }
 
     await this.auditLogService.logChanges(
@@ -98,15 +104,17 @@ export class SalaryChangesService {
       EntityType.SALARY_CHANGES,
       oldRecord as unknown as Record<string, unknown>,
       updated as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return updated;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldRecord = await this.getById(id);
     if (!oldRecord) {
-      throw new NotFoundException(`Запись не найдена`);
+      throw new NotFoundException('Запись не найдена');
     }
 
     const res = await this.pool.query(
@@ -122,7 +130,8 @@ export class SalaryChangesService {
         EntityType.SALARY_CHANGES,
         { deleted: oldRecord.new_salary },
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
+        userId,
       );
     }
 

@@ -29,7 +29,10 @@ export class OrganizationsService {
     return res.rows[0] || null;
   }
 
-  async create(data: CreateOrganizationDto): Promise<OrganizationEntity> {
+  async create(
+    data: CreateOrganizationDto,
+    userId: string,
+  ): Promise<OrganizationEntity> {
     const { name, comment } = data;
     const res: QueryResult<OrganizationEntity> = await this.pool.query(
       'INSERT INTO organizations (name, comment) VALUES ($1, $2) RETURNING *',
@@ -42,6 +45,8 @@ export class OrganizationsService {
       EntityType.ORGANIZATIONS,
       {},
       newOrg as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return newOrg;
@@ -50,6 +55,7 @@ export class OrganizationsService {
   async update(
     id: string,
     data: UpdateOrganizationDto,
+    userId: string,
   ): Promise<OrganizationEntity> {
     const oldOrg = await this.getById(id);
     if (!oldOrg) {
@@ -86,12 +92,14 @@ export class OrganizationsService {
       EntityType.ORGANIZATIONS,
       oldOrg as unknown as Record<string, unknown>,
       updatedOrg as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return updatedOrg;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldOrg = await this.getById(id);
     if (!oldOrg) {
       throw new NotFoundException();
@@ -110,7 +118,8 @@ export class OrganizationsService {
         EntityType.ORGANIZATIONS,
         { deleted: oldOrg.name },
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
+        userId,
       );
     }
 

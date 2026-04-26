@@ -29,7 +29,7 @@ export class RolesService {
     return res.rows[0] || null;
   }
 
-  async create(data: CreateRoleDto): Promise<RoleEntity> {
+  async create(data: CreateRoleDto, userId: string): Promise<RoleEntity> {
     const { name } = data;
     const res: QueryResult<RoleEntity> = await this.pool.query(
       'INSERT INTO roles (name) VALUES ($1) RETURNING *',
@@ -42,12 +42,18 @@ export class RolesService {
       EntityType.ROLES,
       {},
       newRole as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return newRole;
   }
 
-  async update(id: string, data: UpdateRoleDto): Promise<RoleEntity> {
+  async update(
+    id: string,
+    data: UpdateRoleDto,
+    userId: string,
+  ): Promise<RoleEntity> {
     const oldRole = await this.getById(id);
     if (!oldRole) throw new NotFoundException();
 
@@ -71,12 +77,14 @@ export class RolesService {
       EntityType.ROLES,
       oldRole as unknown as Record<string, unknown>,
       updatedRole as unknown as Record<string, unknown>,
+      {},
+      userId,
     );
 
     return updatedRole;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const oldRole = await this.getById(id);
     if (!oldRole) throw new NotFoundException('');
 
@@ -92,7 +100,8 @@ export class RolesService {
         EntityType.ROLES,
         { name: oldRole.name },
         { deleted: true },
-        { true: `Удалено` },
+        { true: 'Удалено' },
+        userId,
       );
     }
     return deleted;

@@ -6,15 +6,15 @@ import {
   Delete,
   Param,
   Body,
-  UsePipes,
 } from '@nestjs/common';
 import { createAddressSchema, updateAddressSchema } from './Addresses.schema';
 import { AddressesService } from './addresses.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
-@Controller('/addresses')
+@Controller('addresses')
 export class AddressesController {
   constructor(private readonly addressesService: AddressesService) {}
 
@@ -29,9 +29,12 @@ export class AddressesController {
   }
 
   @Post()
-  @UsePipes(new JoiValidationPipe(createAddressSchema))
-  async create(@Body() createDto: CreateAddressDto) {
-    return this.addressesService.create(createDto);
+  async create(
+    @Body(new JoiValidationPipe(createAddressSchema))
+    createDto: CreateAddressDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.addressesService.create(createDto, userId);
   }
 
   @Patch(':id')
@@ -39,12 +42,13 @@ export class AddressesController {
     @Param('id') id: string,
     @Body(new JoiValidationPipe(updateAddressSchema))
     updateDto: UpdateAddressDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.addressesService.update(id, updateDto);
+    return this.addressesService.update(id, updateDto, userId);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.addressesService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.addressesService.delete(id, userId);
   }
 }
