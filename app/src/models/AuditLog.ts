@@ -29,6 +29,7 @@ export interface AuditLog {
   field_name: string;
   old_value: string | null;
   new_value: string | null;
+  user_login: string | null;
   created_at: string;
 }
 

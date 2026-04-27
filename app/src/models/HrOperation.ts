@@ -14,6 +14,7 @@ export const HrOperationTypeLabels: Record<HrOperationType, string> = {
 
 export interface HrOperation {
   id: string;
+  user_login?: string;
   employee_id: string;
   department_id: string;
   position_id: string;

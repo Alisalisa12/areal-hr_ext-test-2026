@@ -6,6 +6,7 @@ export enum HrOperationType {
 }
 export class HrOperationEntity {
   id!: string;
+  user_login?: string;
   employee_id!: string;
   department_id!: string;
   position_id!: string;

@@ -9,7 +9,10 @@ export class AuditLogService {
 
   async getAll(): Promise<AuditLogEntity[]> {
     const res: QueryResult<AuditLogEntity> = await this.pool.query(
-      'SELECT * FROM audit_log ORDER BY created_at DESC',
+      `SELECT l.*, u.login as user_login 
+       FROM audit_log l
+       LEFT JOIN users u ON l.user_id = u.id 
+       ORDER BY l.created_at DESC`,
     );
     return res.rows;
   }

@@ -21,6 +21,7 @@ export class HrOperationsService {
     const query = `
       SELECT 
         hro.*,
+        u.login as user_login, -- Добавили поле с логином
         e.last_name || ' ' || e.first_name || ' ' || COALESCE(e.middle_name, '') as employee_name,
         p.name as position_name,
         d.name as department_name,
@@ -30,6 +31,7 @@ export class HrOperationsService {
         sc.new_salary,
         sc.reason as salary_reason
       FROM hr_operations hro
+      LEFT JOIN users u ON hro.created_by = u.id -- Джойним юзеров по полю created_by
       LEFT JOIN employees e ON hro.employee_id = e.id
       LEFT JOIN positions p ON hro.position_id = p.id
       LEFT JOIN departments d ON hro.department_id = d.id
