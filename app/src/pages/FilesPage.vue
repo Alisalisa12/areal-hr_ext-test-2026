@@ -54,6 +54,8 @@
           :columns="columns"
           row-key="id"
           :filter="filter"
+          v-model:pagination="pagination"
+          :rows-per-page-options="[20, 50, 100, 0]"
           :loading="filesStore.isLoading"
           no-data-label="Файлы не найдены или ещё не загружены"
         >
@@ -187,6 +189,9 @@ const categoriesStore = useFileCategoriesStore();
 
 const isMounted = ref(false);
 const filter = ref('');
+const pagination = ref({
+  rowsPerPage: 20
+});
 const uploadDialog = ref(false);
 const selectedEmployeeId = ref<string | null>(null);
 

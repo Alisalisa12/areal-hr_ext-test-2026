@@ -34,6 +34,8 @@
           :columns="columns"
           row-key="id"
           :filter="filter"
+          v-model:pagination="pagination"
+          :rows-per-page-options="[20, 50, 100, 0]"
           no-data-label="Данные не найдены или еще не загружены"
         >
           <template v-slot:body-cell-deleted_at="props">
@@ -114,6 +116,9 @@ const $q = useQuasar();
 const organizationsStore = useOrganizationsStore();
 const isMounted = ref(false);
 const filter = ref('');
+const pagination = ref({
+  rowsPerPage: 20
+});
 const addDialog = ref(false);
 const isEdit = ref(false);
 const editId = ref<string | null>(null);

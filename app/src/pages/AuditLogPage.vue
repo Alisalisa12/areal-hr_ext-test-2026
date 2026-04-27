@@ -20,6 +20,8 @@
           :columns="columns"
           row-key="id"
           :filter="filter"
+          v-model:pagination="pagination"
+          :rows-per-page-options="[20, 50, 100, 0]"
           no-data-label="Данные не найдены или еще не загружены"
         >
           <template v-slot:body-cell-entity_type="props">
@@ -27,6 +29,12 @@
               <q-badge color="primary" class="q-pa-xs">
                 {{ getLabel(props.value) }}
               </q-badge>
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-user_login="props">
+            <q-td :props="props">
+              <span class="text-weight-medium">{{ props.value ?? 'Система' }}</span>
             </q-td>
           </template>
 
@@ -57,7 +65,9 @@ const $q = useQuasar();
 const auditStore = useAuditLogStore();
 const isMounted = ref(false);
 const filter = ref('');
-
+const pagination = ref({
+  rowsPerPage: 20
+});
 const rows = computed(() => auditStore.items);
 
 const columns: QTableColumn[] = [
@@ -68,6 +78,13 @@ const columns: QTableColumn[] = [
     align: 'center',
     sortable: true,
     format: (val) => (val ? date.formatDate(val as string, 'DD.MM.YYYY HH:mm') : '—'),
+  },
+  {
+    name: 'user_login',
+    label: 'Кем создано',
+    field: 'user_login',
+    align: 'left',
+    sortable: true,
   },
   {
     name: 'entity_type',

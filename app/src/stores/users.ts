@@ -24,7 +24,6 @@ export const useUsersStore = defineStore('users', {
     },
 
     async addUser(payload: CreateUserDto) {
-      console.log('sending payload:', JSON.stringify(payload));
       const newUser = await usersApi.createUser(payload);
       this.items.unshift(newUser);
       Notify.create({ type: 'positive', message: 'Пользователь создан' });

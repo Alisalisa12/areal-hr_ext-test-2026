@@ -34,8 +34,15 @@
           :columns="columns"
           row-key="id"
           :filter="filter"
+          v-model:pagination="pagination"
+          :rows-per-page-options="[20, 50, 100, 0]"
           no-data-label="Данные не найдены или еще не загружены"
         >
+          <template v-slot:body-cell-created_by="props">
+            <q-td :props="props">
+              <span class="text-weight-medium">{{ props.value ?? 'Система' }}</span>
+            </q-td>
+          </template>
           <template v-slot:body-cell-actions="props">
             <q-td :props="props" class="text-center">
               <div class="q-gutter-sm">
@@ -202,6 +209,9 @@ const organizationsStore = useOrganizationsStore();
 
 const isMounted = ref(false);
 const filter = ref('');
+const pagination = ref({
+  rowsPerPage: 20
+});
 const addDialog = ref(false);
 const isEdit = ref(false);
 const editId = ref<string | null>(null);
@@ -245,6 +255,7 @@ const columns: QTableColumn<HrOperation>[] = [
   { name: 'position', label: 'Должность', field: 'position_name', align: 'left', sortable: true },
   { name: 'old_salary', label: 'Старый оклад', field: 'old_salary', align: 'center' },
   { name: 'new_salary', label: 'Новый оклад', field: 'new_salary', align: 'center' },
+  { name: 'created_by', label: 'Кем создано', field: 'user_login', align: 'left', sortable: true },
   {
     name: 'created_at',
     label: 'Дата',
@@ -283,8 +294,8 @@ const organizationOptions = computed(() =>
 
 const departmentOptions = computed(() =>
   departmentsStore.items
-  .filter((d) => d.organization_id === newOp.value.organization_id)
-  .map(({ name, id }) => ({ label: name, value: id })),
+    .filter((d) => d.organization_id === newOp.value.organization_id)
+    .map(({ name, id }) => ({ label: name, value: id })),
 );
 
 const positionOptions = computed(() =>
@@ -393,22 +404,24 @@ async function saveOperation(): Promise<void> {
       });
     }
   } else {
-  const created = await hrStore.addHrOperation(payload);
+    const created = await hrStore.addHrOperation(payload);
 
-  if (
-    type === HrOperationType.HIRE ||
-    type === HrOperationType.SALARY_CHANGE ||
-    type === HrOperationType.TRANSFER
-  ) {
-    const currentSalary = getEmployeeCurrentSalary(empId);
-    await salaryStore.addSalaryChange({
-      operation_id: created.id,
-      old_salary: type === HrOperationType.HIRE ? 0 : currentSalary,
-      new_salary: (type === HrOperationType.HIRE || type === HrOperationType.SALARY_CHANGE) ? Number(new_salary) : currentSalary,
-      reason: reason || 'Перевод',
-    });
-  }
-
+    if (
+      type === HrOperationType.HIRE ||
+      type === HrOperationType.SALARY_CHANGE ||
+      type === HrOperationType.TRANSFER
+    ) {
+      const currentSalary = getEmployeeCurrentSalary(empId);
+      await salaryStore.addSalaryChange({
+        operation_id: created.id,
+        old_salary: type === HrOperationType.HIRE ? 0 : currentSalary,
+        new_salary:
+          type === HrOperationType.HIRE || type === HrOperationType.SALARY_CHANGE
+            ? Number(new_salary)
+            : currentSalary,
+        reason: reason || 'Перевод',
+      });
+    }
   }
 
   await Promise.all([hrStore.fetchHrOperations(), salaryStore.fetchSalaryChanges()]);

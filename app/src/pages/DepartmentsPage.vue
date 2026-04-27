@@ -58,6 +58,8 @@
           :columns="columns"
           row-key="id"
           :filter="filter"
+          v-model:pagination="pagination"
+          :rows-per-page-options="[20, 50, 100, 0]"
           :loading="departmentsStore.isLoading"
           no-data-label="Данные не найдены или еще не загружены"
         >
@@ -172,6 +174,9 @@ const departmentsStore = useDepartmentsStore();
 
 const isMounted = ref(false);
 const filter = ref('');
+const pagination = ref({
+  rowsPerPage: 20
+});
 const addDialog = ref(false);
 const isEdit = ref(false);
 const editId = ref<string | null>(null);
