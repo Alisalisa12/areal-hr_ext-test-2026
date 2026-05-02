@@ -5,7 +5,6 @@ import * as Minio from 'minio';
 
 @Global()
 @Module({
-  imports: [ConfigModule],
   exports: [MINIO_TOKEN],
   providers: [
     {

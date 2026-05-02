@@ -25,7 +25,10 @@ async function bootstrap() {
   app.use(passport.session());
   const httpAdapterHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
-  app.enableCors();
+  app.enableCors({
+    origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:8080',
+    credentials: true,
+  });
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
