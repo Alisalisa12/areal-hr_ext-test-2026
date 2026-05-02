@@ -7,6 +7,7 @@ export const useEmployeesStore = defineStore('employees', {
   state: () => ({
     items: [] as Employee[],
     isLoading: false,
+    viewMode: 'active' as 'active' | 'dismissed' | 'all',
   }),
 
   getters: {
@@ -17,7 +18,7 @@ export const useEmployeesStore = defineStore('employees', {
     async fetchEmployees() {
       this.isLoading = true;
       try {
-        this.items = await employeesApi.getEmployees();
+        this.items = await employeesApi.getEmployees(this.viewMode);
       } finally {
         this.isLoading = false;
       }
@@ -39,10 +40,23 @@ export const useEmployeesStore = defineStore('employees', {
       Notify.create({ type: 'positive', message: 'Информация обновлена' });
     },
 
-    async removeEmployee(id: string) {
+    async setViewMode(mode: 'active' | 'dismissed' | 'all') {
+      this.viewMode = mode;
+      await this.fetchEmployees();
+    },
+
+    async dismissEmployee(id: string) {
       await employeesApi.deleteEmployee(id);
-      this.items = this.items.filter((item) => item.id !== id);
-      Notify.create({ type: 'positive', message: 'Сотрудник удален' });
+      const index = this.items.findIndex((i) => i.id === id);
+      if (index !== -1) {
+        const employee = this.items[index];
+        if (this.viewMode === 'active') {
+          this.items.splice(index, 1);
+        } else if (employee) {
+          employee.deleted_at = new Date().toISOString();
+        }
+      }
+      Notify.create({ type: 'positive', message: 'Сотрудник уволен' });
     },
   },
 });

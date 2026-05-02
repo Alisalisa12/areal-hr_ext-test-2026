@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Query,
   Post,
   Patch,
   Delete,
@@ -19,8 +20,10 @@ export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
 
   @Get()
-  async getAll() {
-    return this.employeesService.getAll();
+  async getAll(
+    @Query('viewMode') viewMode: 'active' | 'dismissed' | 'all' = 'active',
+  ) {
+    return this.employeesService.getAll(viewMode);
   }
 
   @Get(':id')

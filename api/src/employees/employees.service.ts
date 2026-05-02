@@ -14,7 +14,7 @@ export class EmployeesService {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  async getAll(): Promise<FullEmployee[]> {
+  async getAll(viewMode: string): Promise<FullEmployee[]> {
     const query = `
       SELECT * FROM (
         SELECT DISTINCT ON (e.id)
@@ -30,13 +30,16 @@ export class EmployeesService {
         LEFT JOIN departments d ON d.id = hro.department_id
         LEFT JOIN organizations org ON org.id = d.organization_id
         LEFT JOIN salary_changes sc ON sc.operation_id = hro.id
-        WHERE e.deleted_at IS NULL
         ORDER BY e.id, hro.created_at DESC, sc.changed_at DESC
       ) AS subquery
+      WHERE 
+        ($1 = 'active' AND deleted_at IS NULL) OR 
+        ($1 = 'dismissed' AND deleted_at IS NOT NULL) OR 
+        ($1 = 'all')
       ORDER BY created_at DESC;
     `;
-    const res: QueryResult<FullEmployee> =
-      await this.pool.query<FullEmployee>(query);
+
+    const res = await this.pool.query<FullEmployee>(query, [viewMode]);
     return res.rows;
   }
 

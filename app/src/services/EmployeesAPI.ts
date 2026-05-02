@@ -1,10 +1,13 @@
 import API from './API';
 import type { Employee, CreateEmployeeDto, UpdateEmployeeDto } from '../models/Employee';
 
-export const getEmployees = async (): Promise<Employee[]> => {
-  const { data } = await API.get<Employee[]>('/employees');
+export const getEmployees = async (viewMode: string = 'active'): Promise<Employee[]> => {
+  const { data } = await API.get<Employee[]>('/employees', {
+    params: { viewMode }
+  });
   return data;
 };
+
 
 export const createEmployee = async (payload: CreateEmployeeDto) => {
   const { data } = await API.post<Employee>('/employees', payload);

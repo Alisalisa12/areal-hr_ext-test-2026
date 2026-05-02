@@ -70,6 +70,22 @@
                   />
                 </q-item-section>
               </q-item>
+              <q-item>
+                <q-item-section>
+                  <q-select
+                    v-model="employeesStore.viewMode"
+                    :options="optionsStatus"
+                    label="Статус"
+                    dense
+                    outlined
+                    rounded
+                    emit-value
+                    map-options
+                    style="font-size: 12px; min-height: 32px"
+                    @update:model-value="onStatusChange"
+                  />
+                </q-item-section>
+              </q-item>
             </q-list>
           </q-btn-dropdown>
           <q-btn
@@ -122,6 +138,7 @@
                   <q-tooltip>Просмотр</q-tooltip>
                 </q-btn>
                 <q-btn
+                  v-if="!props.row.deleted_at"
                   outline
                   square
                   class="q-pa-xs rounded-borders"
@@ -134,13 +151,14 @@
                 </q-btn>
 
                 <q-btn
+                  v-if="!props.row.deleted_at"
                   outline
                   square
                   class="q-pa-xs rounded-borders"
                   color="negative"
                   icon="delete"
                   size="10px"
-                  @click="deleteEmployee(props.row.id)"
+                  @click="terminateEmployee(props.row.id)"
                 >
                   <q-tooltip>Уволить</q-tooltip>
                 </q-btn>
@@ -208,11 +226,16 @@ const employeesStore = useEmployeesStore();
 const selectedPosition = ref<string | null>(null);
 const selectedDept = ref<string | null>(null);
 const selectedOrg = ref<string | null>(null);
+const optionsStatus = [
+  { label: 'Активные', value: 'active' },
+  { label: 'Уволенные', value: 'dismissed' },
+  { label: 'Все', value: 'all' },
+];
 
 const isMounted = ref(false);
 const filter = ref('');
 const pagination = ref({
-  rowsPerPage: 20
+  rowsPerPage: 20,
 });
 const addDialog = ref(false);
 const viewDialog = ref(false);
@@ -277,12 +300,16 @@ const customFilter = (rows: readonly Employee[], terms: string): Employee[] => {
   });
 };
 
+const onStatusChange = async (val: 'active' | 'dismissed' | 'all') => {
+  employeesStore.viewMode = val;
+  await employeesStore.fetchEmployees();
+};
+
 const filteredRows = computed(() => {
   return employeesStore.items.filter((row: Employee) => {
     const matchesPos = !selectedPosition.value || row.position_name === selectedPosition.value;
     const matchesDept = !selectedDept.value || row.department_name === selectedDept.value;
     const matchesOrg = !selectedOrg.value || row.organization_name === selectedOrg.value;
-
     return matchesPos && matchesDept && matchesOrg;
   });
 });
@@ -316,18 +343,18 @@ async function saveEmployee() {
   resetForm();
 }
 
-async function confirmDelete(id: string) {
-  await employeesStore.removeEmployee(id);
+async function confirmTermination(id: string) {
+  await employeesStore.dismissEmployee(id);
 }
 
-function deleteEmployee(id: string) {
+function terminateEmployee(id: string) {
   $q.dialog({
     title: 'Увольнение',
     message: 'Вы уверены, что хотите уволить сотрудника?',
     cancel: true,
     persistent: true,
   }).onOk(() => {
-    void confirmDelete(id);
+    void confirmTermination(id);
   });
 }
 
