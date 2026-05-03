@@ -29,6 +29,7 @@ export const useEmployeesStore = defineStore('employees', {
       this.items.unshift(newEmp);
 
       Notify.create({ type: 'positive', message: 'Сотрудник успешно добавлен' });
+      return newEmp;
     },
 
     async editEmployee(id: string, payload: UpdateEmployeeDto) {

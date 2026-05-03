@@ -38,7 +38,6 @@
                   />
                 </q-item-section>
               </q-item>
-
               <q-item>
                 <q-item-section>
                   <q-select
@@ -54,7 +53,6 @@
                   />
                 </q-item-section>
               </q-item>
-
               <q-item>
                 <q-item-section>
                   <q-select
@@ -149,7 +147,6 @@
                 >
                   <q-tooltip>Изменить</q-tooltip>
                 </q-btn>
-
                 <q-btn
                   v-if="!props.row.deleted_at"
                   outline
@@ -172,41 +169,114 @@
     <EmployeeViewDialog v-model="viewDialog" :employee="selectedEmployee" />
 
     <q-dialog v-model="addDialog" persistent @hide="resetForm">
-      <q-card style="min-width: 400px">
-        <q-card-section>
-          <div class="text-h6">{{ isEdit ? 'Изменить' : 'Добавить' }} сотрудника</div>
+      <q-card style="min-width: 800px; border-radius: 12px">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6 text-weight-bold">
+            {{ isEdit ? 'Изменить' : 'Добавить' }} сотрудника
+          </div>
         </q-card-section>
 
-        <q-card-section class="q-gutter-y-sm">
-          <q-input
-            v-model="newEmployee.last_name"
-            label="Фамилия"
-            dense
-            outlined
-            :rules="[(val) => !!val || 'Обязательное поле']"
-          />
-          <q-input
-            v-model="newEmployee.first_name"
-            label="Имя"
-            dense
-            outlined
-            :rules="[(val) => !!val || 'Обязательное поле']"
-          />
-          <q-input v-model="newEmployee.middle_name" label="Отчество" dense outlined />
-          <q-input
-            v-model="newEmployee.birth_date"
-            label="Дата рождения"
-            type="date"
-            dense
-            outlined
-            stack-label
-            :rules="[(val) => !!val || 'Выберите дату']"
-          />
-        </q-card-section>
+        <q-scroll-area style="height: 70vh">
+          <q-card-section style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="text-overline text-weight-bold text-grey-7">ОСНОВНЫЕ ДАННЫЕ</div>
+            <q-input
+              v-model="newEmployee.last_name"
+              label="Фамилия"
+              dense
+              outlined
+              hide-bottom-space
+              :rules="[(val) => !!val || 'Обязательно']"
+            />
+            <q-input
+              v-model="newEmployee.first_name"
+              label="Имя"
+              dense
+              outlined
+              hide-bottom-space
+              :rules="[(val) => !!val || 'Обязательно']"
+            />
+            <q-input v-model="newEmployee.middle_name" label="Отчество" dense outlined />
+            <q-input
+              v-model="newEmployee.birth_date"
+              label="Дата рождения"
+              type="date"
+              dense
+              outlined
+              stack-label
+              hide-bottom-space
+              :rules="[(val) => !!val || 'Обязательно']"
+            />
+          </q-card-section>
 
-        <q-card-actions align="right">
-          <q-btn flat label="Отмена" color="grey" @click="resetForm" />
-          <q-btn flat label="Сохранить" color="primary" @click="saveEmployee" />
+          <q-separator />
+
+          <q-card-section style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="text-overline text-weight-bold text-grey-7">ПАСПОРТ</div>
+            <q-input
+              v-model="newPassport.full_passport"
+              label="Серия и номер"
+              mask="#### ######"
+              unmasked-value
+              outlined
+              dense
+              placeholder="0000 000000"
+              hide-bottom-space
+              :rules="[(val) => !val || val.length === 10 || '10 цифр']"
+            />
+            <q-input
+              v-model="newPassport.issue_date"
+              label="Дата выдачи"
+              type="date"
+              stack-label
+              outlined
+              dense
+            />
+            <q-input
+              v-model="newPassport.issuer_code"
+              label="Код подразделения"
+              mask="###-###"
+              unmasked-value
+              outlined
+              dense
+              placeholder="000-000"
+              hide-bottom-space
+              :rules="[(val) => !val || val.length === 6 || '6 цифр']"
+            />
+            <q-input
+              v-model="newPassport.issued_by"
+              label="Кем выдан"
+              type="textarea"
+              autogrow
+              outlined
+              dense
+            />
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="text-overline text-weight-bold text-grey-7">АДРЕС</div>
+            <q-input v-model="newAddress.region" label="Регион / Область" outlined dense />
+            <q-input v-model="newAddress.city" label="Город" outlined dense />
+            <q-input v-model="newAddress.street" label="Улица" outlined dense />
+            <div class="row q-gutter-x-sm">
+              <q-input v-model="newAddress.house" label="Дом" class="col" outlined dense />
+              <q-input v-model="newAddress.block" label="Корпус" class="col" outlined dense />
+              <q-input v-model="newAddress.flat" label="Кв." class="col" outlined dense />
+            </div>
+          </q-card-section>
+        </q-scroll-area>
+
+        <q-separator />
+        <q-card-actions align="right" class="q-pa-md q-gutter-x-sm">
+          <q-btn flat label="Отмена" color="grey-7" @click="resetForm" />
+          <q-btn
+            unelevated
+            label="Сохранить"
+            color="primary"
+            @click="saveEmployee"
+            class="q-px-lg"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -217,11 +287,17 @@
 import { ref, onMounted, computed } from 'vue';
 import { date, type QTableColumn, useQuasar } from 'quasar';
 import { useEmployeesStore } from '../stores/employees';
+import { usePassportsStore } from '../stores/passports';
+import { useAddressesStore } from '../stores/addresses';
 import type { Employee, CreateEmployeeDto } from '../models/Employee';
+import type { Passport, CreatePassportDto, UpdatePassportDto } from '../models/Passport';
+import type { Address, CreateAddressDto, UpdateAddressDto } from '../models/Address';
 import EmployeeViewDialog from '../components/EmployeeViewDialog.vue';
 
 const $q = useQuasar();
 const employeesStore = useEmployeesStore();
+const passportsStore = usePassportsStore();
+const addressesStore = useAddressesStore();
 
 const selectedPosition = ref<string | null>(null);
 const selectedDept = ref<string | null>(null);
@@ -234,13 +310,10 @@ const optionsStatus = [
 
 const isMounted = ref(false);
 const filter = ref('');
-const pagination = ref({
-  rowsPerPage: 20,
-});
+const pagination = ref({ rowsPerPage: 20 });
 const addDialog = ref(false);
 const viewDialog = ref(false);
 const selectedEmployee = ref<Employee | null>(null);
-
 const isEdit = ref(false);
 const editId = ref<string | null>(null);
 
@@ -251,7 +324,29 @@ const emptyEmployee: CreateEmployeeDto = {
   birth_date: '',
 };
 
+const emptyPassport = {
+  id: undefined as string | undefined,
+  full_passport: '',
+  issue_date: '',
+  issuer_code: '',
+  issued_by: '',
+};
+
+const emptyAddress = {
+  id: undefined as string | undefined,
+  region: '',
+  city: '',
+  street: '',
+  house: '',
+  block: '',
+  flat: '',
+};
+
 const newEmployee = ref<CreateEmployeeDto>({ ...emptyEmployee });
+const newPassport = ref({ ...emptyPassport });
+const newAddress = ref({ ...emptyAddress });
+const originalPassport = ref({ ...emptyPassport });
+const originalAddress = ref({ ...emptyAddress });
 
 const columns: QTableColumn[] = [
   {
@@ -313,6 +408,7 @@ const filteredRows = computed(() => {
     return matchesPos && matchesDept && matchesOrg;
   });
 });
+
 const optionsPositions = computed<string[]>(() => {
   const items = employeesStore.items
     .map((e) => e.position_name)
@@ -335,12 +431,66 @@ const optionsOrgs = computed<string[]>(() => {
 });
 
 async function saveEmployee() {
-  if (isEdit.value && editId.value) {
-    await employeesStore.editEmployee(editId.value, { ...newEmployee.value });
+    if (isEdit.value && editId.value) {
+      await employeesStore.editEmployee(editId.value, { ...newEmployee.value });
+      await savePassport(editId.value);
+      await saveAddress(editId.value);
+    } else {
+      const createdEmployee = await employeesStore.addEmployee({ ...newEmployee.value });
+      if (createdEmployee?.id) {
+        await savePassport(createdEmployee.id);
+        await saveAddress(createdEmployee.id);
+      }
+    }
+    resetForm();
+}
+
+async function savePassport(employeeId: string) {
+  const hasChanged = JSON.stringify(newPassport.value) !== JSON.stringify(originalPassport.value);
+  if (!hasChanged) return;
+
+  const passport = newPassport.value;
+  if (!passport.issue_date || !passport.issuer_code || !passport.issued_by) return;
+
+  const payload = {
+    employee_id: employeeId,
+    series: '',
+    number: '',
+    issue_date: passport.issue_date,
+    issuer_code: passport.issuer_code,
+    issued_by: passport.issued_by,
+    ...(passport.full_passport ? { full_passport: passport.full_passport } : {}),
+  };
+
+  if (passport.id) {
+    await passportsStore.editPassport(passport.id, payload as UpdatePassportDto);
   } else {
-    await employeesStore.addEmployee({ ...newEmployee.value });
+    await passportsStore.addPassport(payload as CreatePassportDto);
   }
-  resetForm();
+}
+
+async function saveAddress(employeeId: string) {
+  const hasChanged = JSON.stringify(newAddress.value) !== JSON.stringify(originalAddress.value);
+  if (!hasChanged) return;
+
+  const address = newAddress.value;
+  if (!address.region || !address.city || !address.street || !address.house) return;
+
+  const payload = {
+    employee_id: employeeId,
+    region: address.region,
+    city: address.city,
+    street: address.street,
+    house: address.house,
+    ...(address.block ? { block: address.block } : {}),
+    ...(address.flat ? { flat: address.flat } : {}),
+  };
+
+  if (address.id) {
+    await addressesStore.editAddress(address.id, payload as UpdateAddressDto);
+  } else {
+    await addressesStore.addAddress(payload as CreateAddressDto);
+  }
 }
 
 async function confirmTermination(id: string) {
@@ -367,6 +517,37 @@ function editEmployee(row: Employee) {
     middle_name: row.middle_name ?? '',
     birth_date: date.formatDate(row.birth_date, 'YYYY-MM-DD'),
   };
+
+  const passport = passportsStore.items.find((p: Passport) => p.employee_id === row.id);
+  if (passport) {
+    newPassport.value = {
+      id: passport.id,
+      full_passport: `${passport.series}${passport.number}`,
+      issue_date: date.formatDate(passport.issue_date, 'YYYY-MM-DD'),
+      issuer_code: passport.issuer_code,
+      issued_by: passport.issued_by,
+    };
+  } else {
+    newPassport.value = { ...emptyPassport };
+  }
+  originalPassport.value = { ...newPassport.value };
+
+  const address = addressesStore.items.find((a: Address) => a.employee_id === row.id);
+  if (address) {
+    newAddress.value = {
+      id: address.id,
+      region: address.region,
+      city: address.city,
+      street: address.street,
+      house: address.house,
+      block: address.block ?? '',
+      flat: address.flat ?? '',
+    };
+  } else {
+    newAddress.value = { ...emptyAddress };
+  }
+  originalAddress.value = { ...newAddress.value };
+
   addDialog.value = true;
 }
 
@@ -377,6 +558,10 @@ function resetForm() {
   editId.value = null;
   selectedEmployee.value = null;
   newEmployee.value = { ...emptyEmployee };
+  newPassport.value = { ...emptyPassport };
+  newAddress.value = { ...emptyAddress };
+  originalPassport.value = { ...emptyPassport };
+  originalAddress.value = { ...emptyAddress };
 }
 
 function openViewDialog(row: Employee) {
@@ -384,8 +569,12 @@ function openViewDialog(row: Employee) {
   viewDialog.value = true;
 }
 
-onMounted(() => {
+onMounted(async () => {
   isMounted.value = true;
-  void employeesStore.fetchEmployees();
+  await Promise.all([
+    employeesStore.fetchEmployees(),
+    passportsStore.fetchPassports(),
+    addressesStore.fetchAddresses()
+  ]);
 });
 </script>

@@ -67,7 +67,7 @@ export default defineConfig((/* ctx */) => {
           'vite-plugin-checker',
           {
             vueTsc: true,
-            eslint: false  
+            eslint: false
           },
           { server: false },
         ],
@@ -76,9 +76,12 @@ export default defineConfig((/* ctx */) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
     devServer: {
-      // https: true,
       port: 8080,
-      open: true, // opens browser window automatically
+      open: true,
+      watchFiles: {
+        usePolling: true,
+        interval: 1000,
+      },
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
