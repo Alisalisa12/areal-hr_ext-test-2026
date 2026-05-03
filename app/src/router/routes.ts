@@ -39,7 +39,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/log',
     component: () => import('layouts/MainLayout.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, roles: ['admin'] },
     children: [{ path: '', component: () => import('pages/AuditLogPage.vue') }],
   },
   {
@@ -51,7 +51,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/users',
     component: () => import('layouts/MainLayout.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, roles: ['admin'] },
     children: [{ path: '', component: () => import('pages/UsersPage.vue') }],
   },
 

@@ -12,13 +12,7 @@
             :label="authStore.user?.login ?? ''"
             class="q-ma-none"
           />
-          <q-btn
-            flat
-            round
-            color="negative"
-            icon="logout"
-            @click="handleLogout"
-          >
+          <q-btn flat round color="negative" icon="logout" @click="handleLogout">
             <q-tooltip>Выйти</q-tooltip>
           </q-btn>
         </div>
@@ -41,7 +35,10 @@
               <div class="text-white text-h6 text-weight-bolder" style="line-height: 1.1">
                 Учет кадров
               </div>
-              <div class="text-secondary text-caption text-uppercase opacity-80" style="font-size: 10px">
+              <div
+                class="text-secondary text-caption text-uppercase opacity-80"
+                style="font-size: 10px"
+              >
                 Система управления
               </div>
             </div>
@@ -55,7 +52,15 @@
             {{ group.title }}
           </q-item-label>
 
-          <NavLink v-for="link in group.links" :key="link.title" v-bind="link" />
+          <NavLink
+            v-for="link in group.links.filter(
+              (l) =>
+                !l.roles ||
+                (!!authStore.user?.role_name && l.roles.includes(authStore.user.role_name)),
+            )"
+            :key="link.title"
+            v-bind="link"
+          />
         </template>
       </q-list>
     </q-drawer>
@@ -113,8 +118,8 @@ const navLinks = [
       { title: 'Сотрудники', icon: 'group', link: '/employees' },
       { title: 'Файлы', icon: 'folder_open', link: '/doc' },
       { title: 'HR операции', icon: 'swap_horiz', link: '/hr-operation' },
-      { title: 'Логи', icon: 'history', link: '/log' },
-      { title: 'Пользователи', icon: 'person', link: '/users' },
+      { title: 'Логи', icon: 'history', link: '/log', roles: ['admin'] },
+      { title: 'Пользователи', icon: 'person', link: '/users', roles: ['admin'] },
     ],
   },
 ];
