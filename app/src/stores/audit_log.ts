@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import * as auditLogApi from 'src/services/AuditLogAPI';
 import type {
   AuditLog,
-  CreateAuditLogDto,
 } from 'src/models/AuditLog';
 
 export const useAuditLogStore = defineStore('audit-logs', {
@@ -23,12 +22,6 @@ export const useAuditLogStore = defineStore('audit-logs', {
       } finally {
         this.isLoading = false;
       }
-    },
-
-    async addAuditLog(payload: CreateAuditLogDto): Promise<AuditLog> {
-      const newLog = await auditLogApi.createAuditLog(payload);
-      this.items.push(newLog);
-      return newLog;
     },
   },
 });
