@@ -1,4 +1,5 @@
 module.exports = {
+  base: "/areal-hr_ext-test/",
   title: "Система учета сотрудников",
   description: "Документация проекта",
   lang: "ru-RU",
